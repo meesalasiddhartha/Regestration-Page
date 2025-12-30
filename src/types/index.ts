@@ -37,6 +37,7 @@ export interface Submission {
     id?: string | number
     student_id: string | number
     total_questions: number
+    duration_seconds?: number
     submitted_at?: string
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { AssessmentStepProps, Question, Answer, FormErrors } from '../types'
 
@@ -9,8 +9,19 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(true)
 
+    // Timer: Ref to store start time (initialized on mount)
+    const startTimeRef = useRef<number>(Date.now())
+
+    // DEBUG: Verify component mount
+    useEffect(() => {
+        alert("System Update: Time tracking enabled.")
+    }, [])
+
     // Fetch questions from Supabase on component mount
     useEffect(() => {
+        // Reset start time when component actually mounts/effect runs
+        startTimeRef.current = Date.now()
+        // ... (rest of fetch logic remains same)
         const fetchQuestions = async (): Promise<void> => {
             try {
                 console.log('Fetching questions from Supabase...')
@@ -51,6 +62,8 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
 
         fetchQuestions()
     }, [])
+
+    // ... (rest of answer change and validation handling)
 
     const handleAnswerChange = (questionId: number, value: string): void => {
         setAnswers(prev => ({
@@ -110,12 +123,27 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
         console.log('Submitting assessment for Student ID:', studentData.id)
 
         try {
+            // Calculate duration in seconds
+            const now = Date.now()
+            const start = startTimeRef.current
+            let durationSeconds = Math.floor((now - start) / 1000)
+
+            // Safety check
+            if (isNaN(durationSeconds) || durationSeconds < 0) {
+                durationSeconds = 0
+            }
+
+            // DEBUG ALERT (Remove in production)
+            alert(`Debug: Submitting assessment.\nTime taken: ${durationSeconds} seconds`)
+            console.log(`Assessment duration: ${durationSeconds} seconds (Start: ${start}, End: ${now})`)
+
             // Step 1: Create submission record first
             const { data: submissionData, error: submissionError } = await supabase
                 .from('submissions')
                 .insert([{
                     student_id: studentData.id,
-                    total_questions: questions.length
+                    total_questions: questions.length,
+                    duration_seconds: durationSeconds
                 }])
                 .select()
                 .single()
@@ -212,8 +240,25 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
             <div className="card max-w-4xl mx-auto">
                 <div className="mb-8">
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                        Entrance Assessment
+                        Entrance Assessment (Timed)
                     </h2>
+
+                    {/* Warning Note */}
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-xl">
+                        <div className="flex">
+                            <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <p className="text-sm text-red-700 font-medium">
+                                    Don't refresh the page as your responses may be lost. Maintain a stable network connection throughout the exam.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <p className="text-gray-600 mb-4">
                         Welcome, <span className="font-semibold text-primary-700">{studentData?.fullName || 'Student'}</span>!
                         Please answer the following questions thoughtfully. Your responses will be manually reviewed by our team.
