@@ -8,6 +8,7 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
     const [errors, setErrors] = useState<FormErrors>({})
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
     const [isLoading, setIsLoading] = useState<boolean>(true)
+    const [startTime, setStartTime] = useState<number>(0)
 
     // Timer: Ref to store start time (initialized on mount)
     const startTimeRef = useRef<number>(Date.now())
@@ -72,6 +73,9 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                 // Initialize answers object using interleaved list
                 const initialAnswers: Answer = interleaved.reduce((acc, q) => ({ ...acc, [q.id]: '' }), {})
                 setAnswers(initialAnswers)
+                
+                // Record start time
+                setStartTime(Date.now())
             } catch (error) {
                 console.error('Error fetching questions:', error)
                 setErrors({ fetch: `Failed to load questions: ${(error as Error).message}. Please check your database.` })
@@ -145,6 +149,7 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
 
         try {
             // Calculate duration in seconds
+<<<<<<< HEAD
             const now = Date.now()
             const start = startTimeRef.current
             let durationSeconds = Math.floor((now - start) / 1000)
@@ -157,6 +162,11 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
             // DEBUG ALERT (Remove in production)
             alert(`Debug: Submitting assessment.\\nTime taken: ${durationSeconds} seconds`)
             console.log(`Assessment duration: ${durationSeconds} seconds (Start: ${start}, End: ${now})`)
+=======
+            const endTime = Date.now()
+            const durationSeconds = Math.floor((endTime - startTime) / 1000)
+            console.log(`Assessment duration: ${durationSeconds} seconds`)
+>>>>>>> a6ff96b (Add functionality to track assessment duration for students)
 
             // Step 1: Create submission record first
             const { data: submissionData, error: submissionError } = await supabase
