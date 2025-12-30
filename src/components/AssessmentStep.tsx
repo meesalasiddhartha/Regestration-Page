@@ -301,6 +301,11 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                         <br />
                         • R: Result (Output whether it is success or failure, what you learnt)
                     </p>
+                    <div className="bg-red-50 border border-red-300 rounded-xl p-4 mb-4">
+                        <p className="text-sm text-red-800 font-medium">
+                            Do not refresh the page as your responses may be lost. And maintain a stable network throughout the test.
+                        </p>
+                    </div>
                     <div className="bg-primary-50 border border-primary-200 rounded-xl p-4">
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-primary-900">
