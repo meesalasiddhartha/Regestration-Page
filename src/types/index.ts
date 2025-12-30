@@ -1,0 +1,81 @@
+// Student and Registration Types
+export interface StudentData {
+    id?: string | number
+    fullName: string
+    email: string
+    phoneNumber: string
+    collegeName: string
+    yearOfPassing: string
+    branch: string
+    selectedSlot: string
+}
+
+export interface RegistrationFormData {
+    fullName: string
+    email: string
+    phoneNumber: string
+    collegeName: string
+    yearOfPassing: string
+    branch: string
+    selectedSlot: string
+}
+
+export type FormErrors = Record<string, string>
+
+// Assessment Types
+export interface Question {
+    id: number
+    question_number: number
+    question_text: string
+    is_active: boolean
+    created_at?: string
+}
+
+export type Answer = Record<number, string>
+
+export interface Submission {
+    id?: string | number
+    student_id: string | number
+    total_questions: number
+    submitted_at?: string
+}
+
+export interface StudentAnswer {
+    id?: string | number
+    student_id: string | number
+    question_id: number
+    student_name: string
+    student_email: string
+    question_number: number
+    question_text: string
+    answer_text: string
+    submission_id?: string | number
+    created_at?: string
+}
+
+// Component Props
+export interface RegistrationStepProps {
+    onSubmit: (data: StudentData) => void
+}
+
+export interface AssessmentStepProps {
+    onSubmit: (answers: Answer) => void
+    studentData: StudentData
+}
+
+export interface ProgressBarProps {
+    currentStep: number
+}
+
+export interface SuccessStepProps {
+    studentData: StudentData
+}
+
+// Supabase Response Types
+export interface SupabaseResponse<T> {
+    data: T | null
+    error: {
+        message: string
+        code?: string
+    } | null
+}

@@ -1,0 +1,370 @@
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
+import { AssessmentStepProps, Question, Answer, FormErrors } from '../types'
+
+const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
+    const [questions, setQuestions] = useState<Question[]>([])
+    const [answers, setAnswers] = useState<Answer>({})
+    const [errors, setErrors] = useState<FormErrors>({})
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+    const [isLoading, setIsLoading] = useState<boolean>(true)
+
+    // Fetch questions from Supabase on component mount
+    useEffect(() => {
+        const fetchQuestions = async (): Promise<void> => {
+            try {
+                console.log('Fetching questions from Supabase...')
+
+                const { data, error } = await supabase
+                    .from('questions')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('question_number', { ascending: true })
+
+                console.log('Questions response:', { data, error })
+
+                if (error) {
+                    console.error('Supabase error:', error)
+                    throw error
+                }
+
+                if (!data || data.length === 0) {
+                    console.warn('No questions found in database')
+                    setErrors({ fetch: 'No questions found. Please add questions to the database.' })
+                    setIsLoading(false)
+                    return
+                }
+
+                console.log(`Loaded ${data.length} questions`)
+                setQuestions(data)
+
+                // Initialize answers object
+                const initialAnswers: Answer = data.reduce((acc, q) => ({ ...acc, [q.id]: '' }), {})
+                setAnswers(initialAnswers)
+            } catch (error) {
+                console.error('Error fetching questions:', error)
+                setErrors({ fetch: `Failed to load questions: ${(error as Error).message}. Please check your database.` })
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchQuestions()
+    }, [])
+
+    const handleAnswerChange = (questionId: number, value: string): void => {
+        setAnswers(prev => ({
+            ...prev,
+            [questionId]: value
+        }))
+
+        // Clear error when user starts typing
+        if (errors[questionId]) {
+            setErrors(prev => ({
+                ...prev,
+                [questionId]: ''
+            }))
+        }
+    }
+
+    const validateAnswers = (): boolean => {
+        const newErrors: FormErrors = {}
+
+        questions.forEach(q => {
+            const answer = answers[q.id]?.trim()
+            if (!answer) {
+                newErrors[q.id] = 'This question requires an answer'
+            } else if (answer.length < 50) {
+                newErrors[q.id] = 'Please provide a more detailed answer (minimum 50 characters)'
+            }
+        })
+
+        setErrors(newErrors)
+        return Object.keys(newErrors).length === 0
+    }
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+        e.preventDefault()
+
+        if (!validateAnswers()) {
+            // Scroll to first error
+            const firstErrorId = Object.keys(errors)[0]
+            const element = document.getElementById(`ans_${firstErrorId}`)
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }
+            return
+        }
+
+        // Critical Check: Ensure we have a student ID to link answers to
+        if (!studentData?.id) {
+            console.error('CRITICAL ERROR: specific student ID is missing from state.', studentData)
+            setErrors({
+                submit: 'System Error: Student identification missing. Please refresh the page and register again.'
+            })
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+            return
+        }
+
+        setIsSubmitting(true)
+        console.log('Submitting assessment for Student ID:', studentData.id)
+
+        try {
+            // Step 1: Create submission record first
+            const { data: submissionData, error: submissionError } = await supabase
+                .from('submissions')
+                .insert([{
+                    student_id: studentData.id,
+                    total_questions: questions.length
+                }])
+                .select()
+                .single()
+
+            if (submissionError) {
+                console.error('Submission table error:', submissionError)
+                throw new Error(`Failed to create submission record: ${submissionError.message}`)
+            }
+
+            console.log('Submission created:', submissionData)
+
+            // Step 2: Insert each answer
+            const answerRows = questions.map((question) => {
+                const baseRow: Record<string, any> = {
+                    student_id: studentData.id, // TS knows this is defined now
+                    question_id: question.id,
+                    student_name: studentData.fullName || 'Unknown',
+                    student_email: studentData.email || 'unknown@email.com',
+                    question_number: question.question_number,
+                    question_text: question.question_text,
+                    answer_text: answers[question.id] || ''
+                }
+
+                // Add submission_id if available
+                if (submissionData?.id) {
+                    baseRow.submission_id = submissionData.id
+                }
+
+                return baseRow
+            })
+
+            console.log('Inserting answers batch:', answerRows.length, 'rows')
+
+            const { error: answersError } = await supabase
+                .from('student_answers')
+                .insert(answerRows)
+
+            if (answersError) {
+                console.error('Student Answers table error:', answersError)
+                throw new Error(`Failed to save answers: ${answersError.message}`)
+            }
+
+            console.log('Answers inserted successfully!')
+
+            // Success - proceed to next step
+            onSubmit(answers)
+        } catch (error) {
+            console.error('Error submitting assessment:', error)
+            setErrors({
+                submit: `Error: ${(error as Error).message}`
+            })
+            // Scroll to top to show error
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const getAnsweredCount = (): number => {
+        return Object.values(answers).filter(a => a.trim().length > 0).length
+    }
+
+    // Show loading state while fetching questions
+    if (isLoading) {
+        return (
+            <div className="animate-fadeIn">
+                <div className="card max-w-4xl mx-auto text-center py-12">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
+                    <p className="text-gray-600">Loading questions...</p>
+                </div>
+            </div>
+        )
+    }
+
+    // Show error if questions failed to load
+    if (errors.fetch) {
+        return (
+            <div className="animate-fadeIn">
+                <div className="card max-w-4xl mx-auto text-center py-12">
+                    <p className="text-red-600 mb-4">{errors.fetch}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="btn-primary"
+                    >
+                        Refresh Page
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="animate-fadeIn">
+            <div className="card max-w-4xl mx-auto">
+                <div className="mb-8">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                        Entrance Assessment
+                    </h2>
+                    <p className="text-gray-600 mb-4">
+                        Welcome, <span className="font-semibold text-primary-700">{studentData?.fullName || 'Student'}</span>!
+                        Please answer the following questions thoughtfully. Your responses will be manually reviewed by our team.
+                        <br />
+                        <br />
+                        Write 5-10 sentences for each answer if possible.
+                        <br />
+                        <br />
+                        We care more about "how you think" than what you know.
+                        <br />
+                        <br />
+                        Try to answer according to "STAR" method:
+                        <br />
+                        • S: Situation (Specific situation you were in)
+                        <br />
+                        • T: Task (What is your task in that situation)
+                        <br />
+                        • A: Action (what action/approach you did)
+                        <br />
+                        • R: Result (Output whether it is success or failure, what you learnt)
+                    </p>
+                    <div className="bg-primary-50 border border-primary-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-primary-900">
+                                Progress: {getAnsweredCount()} of {questions.length} questions answered
+                            </span>
+                            <span className="text-sm text-primary-700">
+                                {Math.round((getAnsweredCount() / questions.length) * 100)}%
+                            </span>
+                        </div>
+                        <div className="mt-2 w-full bg-primary-200 rounded-full h-2">
+                            <div
+                                className="bg-gradient-to-r from-primary-600 to-primary-700 h-2 rounded-full transition-all duration-500"
+                                style={{ width: `${(getAnsweredCount() / questions.length) * 100}%` }}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-8">
+                    {questions.map((question, index) => (
+                        <div
+                            key={question.id}
+                            className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-primary-300 transition-colors duration-200"
+                        >
+                            <div className="flex items-start gap-4">
+                                <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 text-white rounded-full flex items-center justify-center font-bold">
+                                    {index + 1}
+                                </div>
+                                <div className="flex-1">
+                                    <label
+                                        htmlFor={`ans_${question.id}`}
+                                        className="block text-base font-semibold text-gray-900 mb-3"
+                                    >
+                                        {question.question_text}
+                                    </label>
+                                    <textarea
+                                        id={`ans_${question.id}`}
+                                        name={`answer_${question.id}`}
+                                        value={answers[question.id]}
+                                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                        className={`textarea-field min-h-[150px] ${errors[question.id] ? 'border-red-500' : ''
+                                            }`}
+                                        placeholder="Type your answer here... Be specific and thoughtful in your response."
+                                    />
+                                    <div className="flex items-center justify-between mt-2">
+                                        {errors[question.id] && (
+                                            <p className="error-text">{errors[question.id]}</p>
+                                        )}
+                                        <span
+                                            className={`text-sm ml-auto ${answers[question.id]?.length >= 50
+                                                ? 'text-green-600'
+                                                : 'text-gray-400'
+                                                }`}
+                                        >
+                                            {answers[question.id]?.length || 0} characters
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* General Error Message */}
+                    {errors.submit && (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mt-6">
+                            <p className="text-red-700 text-sm">{errors.submit}</p>
+                        </div>
+                    )}
+
+                    {/* Submit Button */}
+                    <div className="pt-6 flex gap-4">
+                        <button
+                            type="submit"
+                            className="btn-primary flex-1"
+                            disabled={getAnsweredCount() === 0 || isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <svg
+                                        className="inline-block mr-2 w-5 h-5 animate-spin"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        />
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        />
+                                    </svg>
+                                    Submitting...
+                                </>
+                            ) : (
+                                <>
+                                    Submit Assessment
+                                    <svg
+                                        className="inline-block ml-2 w-5 h-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                        />
+                                    </svg>
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-4">
+                        <p className="text-sm text-yellow-800">
+                            <strong>Note:</strong> Please review your answers before submitting.
+                            Your responses will be manually evaluated by our team, and we'll contact you via email.
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )
+}
+
+export default AssessmentStep
