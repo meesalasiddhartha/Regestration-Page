@@ -159,6 +159,7 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                 durationSeconds = 0
             }
 
+<<<<<<< HEAD
             // DEBUG ALERT (Remove in production)
             alert(`Debug: Submitting assessment.\\nTime taken: ${durationSeconds} seconds`)
             console.log(`Assessment duration: ${durationSeconds} seconds (Start: ${start}, End: ${now})`)
@@ -185,12 +186,42 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
             }
 
             console.log('Submission created:', submissionData)
+=======
+            console.log(
+                `Assessment duration: ${durationSeconds} seconds (Start: ${start}, End: ${now})`,
+            );
+
+            // Step 1: Create submission record first
+            if (!supabase) throw new Error("Supabase client not initialized");
+            const { data: submissionData, error: submissionError } =
+                await supabase
+                    .from("submissions")
+                    .insert([
+                        {
+                            student_id: studentData.id,
+                            total_questions: questions.length,
+                            duration_seconds: durationSeconds,
+                        },
+                    ])
+                    .select()
+                    .single();
+
+            if (submissionError) {
+                console.error("Submission table error:", submissionError);
+                throw new Error(
+                    `Failed to create submission record: ${submissionError.message}`,
+                );
+            }
+
+            console.log("Submission created:", submissionData);
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
 
             // Step 2: Insert each answer
             const answerRows = questions.map((question) => {
                 const baseRow: Record<string, any> = {
                     student_id: studentData.id,
                     question_id: question.id,
+<<<<<<< HEAD
                     student_name: studentData.fullName || 'Unknown',
                     student_email: studentData.email || 'unknown@email.com',
                     question_number: question.question_number,
@@ -236,6 +267,55 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
     const getAnsweredCount = (): number => {
         return Object.values(answers).filter(a => a.trim().length > 0).length
     }
+=======
+                    student_name: studentData.fullName || "Unknown",
+                    student_email: studentData.email || "unknown@email.com",
+                    question_number: question.question_number,
+                    question_text: question.question_text,
+                    answer_text: answers[question.id] || "",
+                };
+
+                // Add submission_id if available
+                if (submissionData?.id) {
+                    baseRow.submission_id = submissionData.id;
+                }
+
+                return baseRow;
+            });
+
+            console.log("Inserting answers batch:", answerRows.length, "rows");
+
+            const { error: answersError } = await supabase
+                .from("student_answers")
+                .insert(answerRows);
+
+            if (answersError) {
+                console.error("Student Answers table error:", answersError);
+                throw new Error(
+                    `Failed to save answers: ${answersError.message}`,
+                );
+            }
+
+            console.log("Answers inserted successfully!");
+
+            // Success - proceed to next step
+            onSubmit(answers);
+        } catch (error) {
+            console.error("Error submitting assessment:", error);
+            setErrors({
+                submit: `Error: ${(error as Error).message}`,
+            });
+            // Scroll to top to show error
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const getAnsweredCount = (): number => {
+        return Object.values(answers).filter((a) => a.trim().length > 0).length;
+    };
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
 
     // Show loading state while fetching questions
     if (isLoading) {
@@ -246,7 +326,11 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                     <p className="text-gray-600">Loading questions...</p>
                 </div>
             </div>
+<<<<<<< HEAD
         )
+=======
+        );
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
     }
 
     // Show error if questions failed to load
@@ -263,7 +347,11 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                     </button>
                 </div>
             </div>
+<<<<<<< HEAD
         )
+=======
+        );
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
     }
 
     return (
@@ -278,21 +366,49 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                     <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-xl">
                         <div className="flex">
                             <div className="flex-shrink-0">
+<<<<<<< HEAD
                                 <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+=======
+                                <svg
+                                    className="h-5 w-5 text-red-500"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                        clipRule="evenodd"
+                                    />
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
                                 </svg>
                             </div>
                             <div className="ml-3">
                                 <p className="text-sm text-red-700 font-medium">
+<<<<<<< HEAD
                                     Don't refresh the page as your responses may be lost. Maintain a stable network connection throughout the exam.
+=======
+                                    Don't refresh the page as your responses may
+                                    be lost. Maintain a stable network
+                                    connection throughout the exam.
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
                                 </p>
                             </div>
                         </div>
                     </div>
 
                     <p className="text-gray-600 mb-4">
+<<<<<<< HEAD
                         Welcome, <span className="font-semibold text-primary-700">{studentData?.fullName || 'Student'}</span>!
                         Please answer the following questions thoughtfully. Your responses will be manually reviewed by our team.
+=======
+                        Welcome,{" "}
+                        <span className="font-semibold text-primary-700">
+                            {studentData?.fullName || "Student"}
+                        </span>
+                        ! Please answer the following questions thoughtfully.
+                        Your responses will be manually reviewed by our team.
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
                         <br />
                         <br />
                         For text questions, write 5-10 sentences if possible.
@@ -308,6 +424,7 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                         • T: Task (What is your task in that situation)
                         <br />
                         • A: Action (what action/approach you did)
+<<<<<<< HEAD
                         <br />
                         • R: Result (Output whether it is success or failure, what you learnt)
                     </p>
@@ -328,12 +445,35 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                             </span>
                             <span className="text-sm text-primary-700">
                                 {Math.round((getAnsweredCount() / questions.length) * 100)}%
+=======
+                        <br />• R: Result (Output whether it is success or
+                        failure, what you learnt)
+                    </p>
+                    <div className="bg-primary-50 border border-primary-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-primary-900">
+                                Progress: {getAnsweredCount()} of{" "}
+                                {questions.length} questions answered
+                            </span>
+                            <span className="text-sm text-primary-700">
+                                {Math.round(
+                                    (getAnsweredCount() / questions.length) *
+                                        100,
+                                )}
+                                %
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
                             </span>
                         </div>
                         <div className="mt-2 w-full bg-primary-200 rounded-full h-2">
                             <div
                                 className="bg-gradient-to-r from-primary-600 to-primary-700 h-2 rounded-full transition-all duration-500"
+<<<<<<< HEAD
                                 style={{ width: `${(getAnsweredCount() / questions.length) * 100}%` }}
+=======
+                                style={{
+                                    width: `${(getAnsweredCount() / questions.length) * 100}%`,
+                                }}
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
                             />
                         </div>
                     </div>
@@ -355,7 +495,11 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                                         className="block text-base font-semibold text-gray-900 mb-3"
                                     >
                                         {question.question_text}
+<<<<<<< HEAD
                                         {question.question_type === 'text' && (
+=======
+                                        {question.question_type === "text" && (
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
                                             <span className="ml-2 text-xs font-normal text-gray-500 bg-gray-200 px-2 py-1 rounded">
                                                 Text Answer
                                             </span>
@@ -363,6 +507,7 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                                     </label>
 
                                     {/* Render MCQ options or text area based on question type */}
+<<<<<<< HEAD
                                     {question.question_type === 'mcq' && question.mcq_options ? (
                                         <div className="space-y-3">
                                             {question.mcq_options.map((option, optionIndex) => (
@@ -385,6 +530,48 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                                                     <span className="ml-3 text-gray-700">{option}</span>
                                                 </label>
                                             ))}
+=======
+                                    {question.question_type === "mcq" &&
+                                    question.mcq_options ? (
+                                        <div className="space-y-3">
+                                            {question.mcq_options.map(
+                                                (option, optionIndex) => (
+                                                    <label
+                                                        key={optionIndex}
+                                                        className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                                                            answers[
+                                                                question.id
+                                                            ] === option
+                                                                ? "border-primary-500 bg-primary-50"
+                                                                : "border-gray-300 hover:border-primary-300 bg-white"
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            id={`ans_${question.id}_${optionIndex}`}
+                                                            name={`answer_${question.id}`}
+                                                            value={option}
+                                                            checked={
+                                                                answers[
+                                                                    question.id
+                                                                ] === option
+                                                            }
+                                                            onChange={(e) =>
+                                                                handleAnswerChange(
+                                                                    question.id,
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            className="w-5 h-5 text-primary-600 focus:ring-primary-500"
+                                                        />
+                                                        <span className="ml-3 text-gray-700">
+                                                            {option}
+                                                        </span>
+                                                    </label>
+                                                ),
+                                            )}
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
                                         </div>
                                     ) : (
                                         <>
@@ -392,13 +579,28 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                                                 id={`ans_${question.id}`}
                                                 name={`answer_${question.id}`}
                                                 value={answers[question.id]}
+<<<<<<< HEAD
                                                 onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                                                 className={`textarea-field min-h-[150px] ${errors[question.id] ? 'border-red-500' : ''
                                                     }`}
+=======
+                                                onChange={(e) =>
+                                                    handleAnswerChange(
+                                                        question.id,
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className={`textarea-field min-h-[150px] ${
+                                                    errors[question.id]
+                                                        ? "border-red-500"
+                                                        : ""
+                                                }`}
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
                                                 placeholder="Type your answer here... Be specific and thoughtful in your response."
                                             />
                                             <div className="flex items-center justify-between mt-2">
                                                 {errors[question.id] && (
+<<<<<<< HEAD
                                                     <p className="error-text">{errors[question.id]}</p>
                                                 )}
                                                 <span
@@ -408,15 +610,41 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                                                         }`}
                                                 >
                                                     {answers[question.id]?.length || 0} characters
+=======
+                                                    <p className="error-text">
+                                                        {errors[question.id]}
+                                                    </p>
+                                                )}
+                                                <span
+                                                    className={`text-sm ml-auto ${
+                                                        answers[question.id]
+                                                            ?.length >= 50
+                                                            ? "text-green-600"
+                                                            : "text-gray-400"
+                                                    }`}
+                                                >
+                                                    {answers[question.id]
+                                                        ?.length || 0}{" "}
+                                                    characters
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
                                                 </span>
                                             </div>
                                         </>
                                     )}
 
                                     {/* Show error for MCQ questions */}
+<<<<<<< HEAD
                                     {question.question_type === 'mcq' && errors[question.id] && (
                                         <p className="error-text mt-2">{errors[question.id]}</p>
                                     )}
+=======
+                                    {question.question_type === "mcq" &&
+                                        errors[question.id] && (
+                                            <p className="error-text mt-2">
+                                                {errors[question.id]}
+                                            </p>
+                                        )}
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
                                 </div>
                             </div>
                         </div>
@@ -425,7 +653,13 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                     {/* General Error Message */}
                     {errors.submit && (
                         <div className="bg-red-50 border border-red-200 rounded-xl p-4 mt-6">
+<<<<<<< HEAD
                             <p className="text-red-700 text-sm">{errors.submit}</p>
+=======
+                            <p className="text-red-700 text-sm">
+                                {errors.submit}
+                            </p>
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
                         </div>
                     )}
 
@@ -482,14 +716,28 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
 
                     <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-4">
                         <p className="text-sm text-yellow-800">
+<<<<<<< HEAD
                             <strong>Note:</strong> Please review your answers before submitting.
                             Your responses will be manually evaluated by our team, and we'll contact you via email.
+=======
+                            <strong>Note:</strong> Please review your answers
+                            before submitting. Your responses will be manually
+                            evaluated by our team, and we'll contact you via
+                            email.
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
                         </p>
                     </div>
                 </form>
             </div>
         </div>
+<<<<<<< HEAD
     )
 }
 
 export default AssessmentStep
+=======
+    );
+};
+
+export default AssessmentStep;
+>>>>>>> cb49dde (Remove unnecessary logging and simplify submission process)
