@@ -335,9 +335,11 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                                         className="block text-base font-semibold text-gray-900 mb-3"
                                     >
                                         {question.question_text}
-                                        <span className="ml-2 text-xs font-normal text-gray-500 bg-gray-200 px-2 py-1 rounded">
-                                            {question.question_type === 'mcq' ? 'Multiple Choice' : 'Text Answer'}
-                                        </span>
+                                        {question.question_type === 'text' && (
+                                            <span className="ml-2 text-xs font-normal text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                                                Text Answer
+                                            </span>
+                                        )}
                                     </label>
 
                                     {/* Render MCQ options or text area based on question type */}

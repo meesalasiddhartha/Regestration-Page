@@ -186,6 +186,9 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">
                         Student Registration
                     </h2>
+                    <p className="text-gray-900 font-semibold mb-2">
+                        cohort is available for both online and offline
+                    </p>
                     <p className="text-gray-600">
                         Please provide your information to begin the enrollment process
                     </p>

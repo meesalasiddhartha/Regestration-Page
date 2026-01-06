@@ -35,7 +35,7 @@ function App() {
                 {/* Header */}
                 <div className="text-center mb-8">
                     <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-                        MetaLearn
+                        OttoLearn
                     </h1>
                     <p className="text-lg text-gray-600">
                         AI Native FullStack Developer
@@ -63,7 +63,7 @@ function App() {
 
                 {/* Footer */}
                 <div className="text-center mt-16 text-sm text-gray-500">
-                    <p>© 2025 MetaLearn. All rights reserved.</p>
+                    <p>© 2025 OttoLearn. All rights reserved.</p>
                 </div>
             </div>
         </div>
