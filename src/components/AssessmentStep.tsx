@@ -21,7 +21,7 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
     useEffect(() => {
         // Reset start time when component actually mounts/effect runs
         startTimeRef.current = Date.now()
-        // ... (rest of fetch logic remains same)
+
         const fetchQuestions = async (): Promise<void> => {
             try {
                 console.log('Fetching questions from Supabase...')
@@ -47,10 +47,30 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                 }
 
                 console.log(`Loaded ${data.length} questions`)
-                setQuestions(data)
 
-                // Initialize answers object
-                const initialAnswers: Answer = data.reduce((acc, q) => ({ ...acc, [q.id]: '' }), {})
+                // Interleave questions: 3 MCQ followed by 2 Text
+                const mcqs = data.filter(q => q.question_type === 'mcq')
+                const texts = data.filter(q => q.question_type === 'text')
+
+                const interleaved: Question[] = []
+                let mcqIdx = 0
+                let textIdx = 0
+
+                while (mcqIdx < mcqs.length || textIdx < texts.length) {
+                    // Add up to 3 MCQs
+                    for (let i = 0; i < 3 && mcqIdx < mcqs.length; i++) {
+                        interleaved.push(mcqs[mcqIdx++])
+                    }
+                    // Add up to 2 Text questions
+                    for (let i = 0; i < 2 && textIdx < texts.length; i++) {
+                        interleaved.push(texts[textIdx++])
+                    }
+                }
+
+                setQuestions(interleaved)
+
+                // Initialize answers object using interleaved list
+                const initialAnswers: Answer = interleaved.reduce((acc, q) => ({ ...acc, [q.id]: '' }), {})
                 setAnswers(initialAnswers)
             } catch (error) {
                 console.error('Error fetching questions:', error)
@@ -63,15 +83,13 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
         fetchQuestions()
     }, [])
 
-    // ... (rest of answer change and validation handling)
-
     const handleAnswerChange = (questionId: number, value: string): void => {
         setAnswers(prev => ({
             ...prev,
             [questionId]: value
         }))
 
-        // Clear error when user starts typing
+        // Clear error when user starts typing/selecting
         if (errors[questionId]) {
             setErrors(prev => ({
                 ...prev,
@@ -85,11 +103,14 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
 
         questions.forEach(q => {
             const answer = answers[q.id]?.trim()
+
             if (!answer) {
                 newErrors[q.id] = 'This question requires an answer'
-            } else if (answer.length < 50) {
+            } else if (q.question_type === 'text' && answer.length < 50) {
+                // Only text questions need minimum 50 characters
                 newErrors[q.id] = 'Please provide a more detailed answer (minimum 50 characters)'
             }
+            // MCQ questions just need a selection (already validated by !answer check above)
         })
 
         setErrors(newErrors)
@@ -134,7 +155,7 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
             }
 
             // DEBUG ALERT (Remove in production)
-            alert(`Debug: Submitting assessment.\nTime taken: ${durationSeconds} seconds`)
+            alert(`Debug: Submitting assessment.\\nTime taken: ${durationSeconds} seconds`)
             console.log(`Assessment duration: ${durationSeconds} seconds (Start: ${start}, End: ${now})`)
 
             // Step 1: Create submission record first
@@ -158,7 +179,7 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
             // Step 2: Insert each answer
             const answerRows = questions.map((question) => {
                 const baseRow: Record<string, any> = {
-                    student_id: studentData.id, // TS knows this is defined now
+                    student_id: studentData.id,
                     question_id: question.id,
                     student_name: studentData.fullName || 'Unknown',
                     student_email: studentData.email || 'unknown@email.com',
@@ -264,7 +285,7 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                         Please answer the following questions thoughtfully. Your responses will be manually reviewed by our team.
                         <br />
                         <br />
-                        Write 5-10 sentences for each answer if possible.
+                        For text questions, write 5-10 sentences if possible.
                         <br />
                         <br />
                         We care more about "how you think" than what you know.
@@ -314,29 +335,66 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                                         className="block text-base font-semibold text-gray-900 mb-3"
                                     >
                                         {question.question_text}
-                                    </label>
-                                    <textarea
-                                        id={`ans_${question.id}`}
-                                        name={`answer_${question.id}`}
-                                        value={answers[question.id]}
-                                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                                        className={`textarea-field min-h-[150px] ${errors[question.id] ? 'border-red-500' : ''
-                                            }`}
-                                        placeholder="Type your answer here... Be specific and thoughtful in your response."
-                                    />
-                                    <div className="flex items-center justify-between mt-2">
-                                        {errors[question.id] && (
-                                            <p className="error-text">{errors[question.id]}</p>
-                                        )}
-                                        <span
-                                            className={`text-sm ml-auto ${answers[question.id]?.length >= 50
-                                                ? 'text-green-600'
-                                                : 'text-gray-400'
-                                                }`}
-                                        >
-                                            {answers[question.id]?.length || 0} characters
+                                        <span className="ml-2 text-xs font-normal text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                                            {question.question_type === 'mcq' ? 'Multiple Choice' : 'Text Answer'}
                                         </span>
-                                    </div>
+                                    </label>
+
+                                    {/* Render MCQ options or text area based on question type */}
+                                    {question.question_type === 'mcq' && question.mcq_options ? (
+                                        <div className="space-y-3">
+                                            {question.mcq_options.map((option, optionIndex) => (
+                                                <label
+                                                    key={optionIndex}
+                                                    className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${answers[question.id] === option
+                                                        ? 'border-primary-500 bg-primary-50'
+                                                        : 'border-gray-300 hover:border-primary-300 bg-white'
+                                                        }`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        id={`ans_${question.id}_${optionIndex}`}
+                                                        name={`answer_${question.id}`}
+                                                        value={option}
+                                                        checked={answers[question.id] === option}
+                                                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                                        className="w-5 h-5 text-primary-600 focus:ring-primary-500"
+                                                    />
+                                                    <span className="ml-3 text-gray-700">{option}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <textarea
+                                                id={`ans_${question.id}`}
+                                                name={`answer_${question.id}`}
+                                                value={answers[question.id]}
+                                                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                                className={`textarea-field min-h-[150px] ${errors[question.id] ? 'border-red-500' : ''
+                                                    }`}
+                                                placeholder="Type your answer here... Be specific and thoughtful in your response."
+                                            />
+                                            <div className="flex items-center justify-between mt-2">
+                                                {errors[question.id] && (
+                                                    <p className="error-text">{errors[question.id]}</p>
+                                                )}
+                                                <span
+                                                    className={`text-sm ml-auto ${answers[question.id]?.length >= 50
+                                                        ? 'text-green-600'
+                                                        : 'text-gray-400'
+                                                        }`}
+                                                >
+                                                    {answers[question.id]?.length || 0} characters
+                                                </span>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Show error for MCQ questions */}
+                                    {question.question_type === 'mcq' && errors[question.id] && (
+                                        <p className="error-text mt-2">{errors[question.id]}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>

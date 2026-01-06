@@ -27,6 +27,8 @@ export interface Question {
     id: number
     question_number: number
     question_text: string
+    question_type: 'text' | 'mcq'  // Type of question
+    mcq_options?: string[]          // Array of options for MCQ questions
     is_active: boolean
     created_at?: string
 }
