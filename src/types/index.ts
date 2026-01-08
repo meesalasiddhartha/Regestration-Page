@@ -8,6 +8,7 @@ export interface StudentData {
     yearOfPassing: string
     branch: string
     selectedSlot: string
+    referredBy?: string
 }
 
 export interface RegistrationFormData {
@@ -18,6 +19,7 @@ export interface RegistrationFormData {
     yearOfPassing: string
     branch: string
     selectedSlot: string
+    referredBy: string
 }
 
 export type FormErrors = Record<string, string>

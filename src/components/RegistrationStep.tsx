@@ -11,7 +11,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
         collegeName: '',
         yearOfPassing: '',
         branch: '',
-        selectedSlot: ''
+        selectedSlot: '',
+        referredBy: ''
     })
 
     const [errors, setErrors] = useState<FormErrors>({})
@@ -148,7 +149,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                         college_name: formData.collegeName,
                         year_of_passing: formData.yearOfPassing,
                         branch: formData.branch,
-                        selected_slot: formData.selectedSlot
+                        selected_slot: formData.selectedSlot,
+                        referred_by: formData.referredBy || null // Send null if empty string
                     }
                 ])
                 .select()
@@ -373,6 +375,23 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                         {touched.selectedSlot && errors.selectedSlot && (
                             <p className="error-text">{errors.selectedSlot}</p>
                         )}
+                    </div>
+
+                    {/* Referred By (Optional) */}
+                    <div>
+                        <label htmlFor="referredBy" className="label">
+                            Referred By <span className="text-gray-400 font-normal text-sm ml-1">(Optional)</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="referredBy"
+                            name="referredBy"
+                            value={formData.referredBy}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            className="input-field"
+                            placeholder="Enter name of person who referred you"
+                        />
                     </div>
 
                     {/* General Error Message */}
