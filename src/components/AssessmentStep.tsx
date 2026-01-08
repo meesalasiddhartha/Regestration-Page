@@ -186,7 +186,7 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                                     <h3 className="text-lg font-semibold text-gray-900 mb-4">{question.question_text}</h3>
                                     {question.question_type === 'mcq' ? (
                                         <div className="space-y-3">
-                                            {question.options?.map((option, idx) => (
+                                            {question.mcq_options?.map((option, idx) => (
                                                 <label key={idx} className="flex items-center p-4 rounded-lg border border-gray-200 bg-white hover:border-indigo-300 transition-colors cursor-pointer group">
                                                     <input
                                                         type="radio"
