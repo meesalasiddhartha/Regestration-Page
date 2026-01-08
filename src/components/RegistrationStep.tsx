@@ -366,7 +366,7 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             ) : (
                                 // Fallback info if loading or empty
                                 <>
-                                    <option value="5th January">5th January</option>
+
                                     <option value="19th January">19th January</option>
                                     <option value="2nd February">2nd February</option>
                                 </>

@@ -165,8 +165,57 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
         <div className="max-w-4xl mx-auto px-4 py-8">
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10">
                 <div className="mb-8">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Technical Assessment</h2>
-                    <p className="text-gray-600">Please answer the following questions based on your experience and knowledge.</p>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">Entrance Assessment</h2>
+
+                    <div className="space-y-4 text-gray-700">
+                        <p>
+                            Welcome, <span className="text-orange-600 font-bold">{studentData?.fullName || 'Student'}</span>! Please answer the following questions thoughtfully. Your responses will be manually reviewed by our team.
+                        </p>
+
+                        <p>Write 5-10 sentences for each answer if possible.</p>
+
+                        <p>We care more about "how you think" than what you know.</p>
+
+                        <div>
+                            <p className="mb-2">Try to answer according to "STAR" method:</p>
+                            <ul className="list-disc pl-5 space-y-1 text-gray-600">
+                                <li><strong>S: Situation</strong> (Specific situation you were in)</li>
+                                <li><strong>T: Task</strong> (What is your task in that situation)</li>
+                                <li><strong>A: Action</strong> (what action/approach you did)</li>
+                                <li><strong>R: Result</strong> (Output whether it is success or failure, what you learnt)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mt-8 bg-orange-50 rounded-xl p-4 border border-orange-100">
+                        <div className="flex justify-between text-sm font-semibold text-orange-800 mb-2">
+                            <span>Progress: {getAnsweredCount()} of {questions.length} questions answered</span>
+                            <span>{Math.round((getAnsweredCount() / (questions.length || 1)) * 100)}%</span>
+                        </div>
+                        <div className="w-full bg-orange-200 rounded-full h-2.5">
+                            <div
+                                className="bg-orange-400 h-2.5 rounded-full transition-all duration-300 ease-in-out"
+                                style={{ width: `${(getAnsweredCount() / (questions.length || 1)) * 100}%` }}
+                            ></div>
+                        </div>
+                    </div>
+
+                    {/* Warning Note */}
+                    <div className="mt-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl">
+                        <div className="flex">
+                            <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <p className="text-sm text-red-700">
+                                    <strong className="font-medium">Important:</strong> Do not refresh the page as your responses may be lost. Please maintain a stable network connection throughout the exam.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {errors.fetch && (
