@@ -8,6 +8,8 @@ export interface StudentData {
     yearOfPassing: string
     branch: string
     selectedSlot: string
+    sessionTime: string
+    mode: string
     referredBy?: string
 }
 
@@ -19,6 +21,8 @@ export interface RegistrationFormData {
     yearOfPassing: string
     branch: string
     selectedSlot: string
+    sessionTime: string
+    mode: string
     referredBy: string
 }
 

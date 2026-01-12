@@ -16,6 +16,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
         yearOfPassing: "",
         branch: "",
         selectedSlot: "",
+        sessionTime: "",
+        mode: "",
         referredBy: "",
     });
 
@@ -95,6 +97,14 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
             newErrors.selectedSlot = "Please select a slot";
         }
 
+        if (!formData.sessionTime) {
+            newErrors.sessionTime = "Please select a session time";
+        }
+
+        if (!formData.mode) {
+            newErrors.mode = "Please select a preferred mode";
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -141,6 +151,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
             yearOfPassing: true,
             branch: true,
             selectedSlot: true,
+            sessionTime: true,
+            mode: true,
         });
 
         if (!validateForm()) {
@@ -162,6 +174,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                         year_of_passing: formData.yearOfPassing,
                         branch: formData.branch,
                         selected_slot: formData.selectedSlot,
+                        session_time: formData.sessionTime,
+                        mode: formData.mode,
                         referred_by: formData.referredBy || null, // Send null if empty string
                     },
                 ])
@@ -222,11 +236,10 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.fullName}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${
-                                touched.fullName && errors.fullName
+                            className={`input-field ${touched.fullName && errors.fullName
                                     ? "border-red-500"
                                     : ""
-                            }`}
+                                }`}
                             placeholder="Enter your full name"
                         />
                         {touched.fullName && errors.fullName && (
@@ -247,11 +260,10 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.email}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${
-                                touched.email && errors.email
+                            className={`input-field ${touched.email && errors.email
                                     ? "border-red-500"
                                     : ""
-                            }`}
+                                }`}
                             placeholder="your.email@example.com"
                         />
                         {touched.email && errors.email && (
@@ -271,11 +283,10 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.phoneNumber}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${
-                                touched.phoneNumber && errors.phoneNumber
+                            className={`input-field ${touched.phoneNumber && errors.phoneNumber
                                     ? "border-red-500"
                                     : ""
-                            }`}
+                                }`}
                             placeholder="+1 (555) 123-4567"
                         />
                         {touched.phoneNumber && errors.phoneNumber && (
@@ -295,11 +306,10 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.collegeName}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${
-                                touched.collegeName && errors.collegeName
+                            className={`input-field ${touched.collegeName && errors.collegeName
                                     ? "border-red-500"
                                     : ""
-                            }`}
+                                }`}
                             placeholder="Enter your college name"
                         />
                         {touched.collegeName && errors.collegeName && (
@@ -319,11 +329,10 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.yearOfPassing}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${
-                                touched.yearOfPassing && errors.yearOfPassing
+                            className={`input-field ${touched.yearOfPassing && errors.yearOfPassing
                                     ? "border-red-500"
                                     : ""
-                            }`}
+                                }`}
                         >
                             <option value="">Select year</option>
                             <option value="2024">2024</option>
@@ -349,11 +358,10 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.branch}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${
-                                touched.branch && errors.branch
+                            className={`input-field ${touched.branch && errors.branch
                                     ? "border-red-500"
                                     : ""
-                            }`}
+                                }`}
                         >
                             <option value="">Select your major</option>
                             <option value="Computer Science Engineering (CSE)">
@@ -417,11 +425,10 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.selectedSlot}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${
-                                touched.selectedSlot && errors.selectedSlot
+                            className={`input-field ${touched.selectedSlot && errors.selectedSlot
                                     ? "border-red-500"
                                     : ""
-                            }`}
+                                }`}
                         >
                             <option value="">Select your preferred slot</option>
                             {availableSlots.length > 0 ? (
@@ -444,6 +451,60 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                         </select>
                         {touched.selectedSlot && errors.selectedSlot && (
                             <p className="error-text">{errors.selectedSlot}</p>
+                        )}
+                    </div>
+
+                    {/* Session Time */}
+                    <div>
+                        <label htmlFor="sessionTime" className="label">
+                            Preferred Session Time <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            id="sessionTime"
+                            name="sessionTime"
+                            value={formData.sessionTime}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            className={`input-field ${touched.sessionTime && errors.sessionTime
+                                    ? "border-red-500"
+                                    : ""
+                                }`}
+                        >
+                            <option value="">Select session time</option>
+                            <option value="Morning Session (10am-11.30am)">
+                                Morning Session (10am-11.30am)
+                            </option>
+                            <option value="Evening Session (5pm-6.30pm)">
+                                Evening Session (5pm-6.30pm)
+                            </option>
+                        </select>
+                        {touched.sessionTime && errors.sessionTime && (
+                            <p className="error-text">{errors.sessionTime}</p>
+                        )}
+                    </div>
+
+                    {/* Mode */}
+                    <div>
+                        <label htmlFor="mode" className="label">
+                            Preferred Mode <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            id="mode"
+                            name="mode"
+                            value={formData.mode}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            className={`input-field ${touched.mode && errors.mode
+                                    ? "border-red-500"
+                                    : ""
+                                }`}
+                        >
+                            <option value="">Select mode</option>
+                            <option value="Online">Online</option>
+                            <option value="Offline">Offline</option>
+                        </select>
+                        {touched.mode && errors.mode && (
+                            <p className="error-text">{errors.mode}</p>
                         )}
                     </div>
 

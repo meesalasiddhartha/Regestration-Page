@@ -15,7 +15,9 @@ function App() {
         collegeName: '',
         yearOfPassing: '',
         branch: '',
-        selectedSlot: ''
+        selectedSlot: '',
+        sessionTime: '',
+        mode: ''
     })
     const [assessmentAnswers, setAssessmentAnswers] = useState<Answer>({})
 
