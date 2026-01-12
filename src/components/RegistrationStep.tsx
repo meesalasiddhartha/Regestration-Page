@@ -1,124 +1,136 @@
 // ... (imports remain mostly same, adding useEffect)
-import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
-import { RegistrationStepProps, RegistrationFormData, FormErrors } from '../types'
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
+import {
+    RegistrationStepProps,
+    RegistrationFormData,
+    FormErrors,
+} from "../types";
 
 const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
     const [formData, setFormData] = useState<RegistrationFormData>({
-        fullName: '',
-        email: '',
-        phoneNumber: '',
-        collegeName: '',
-        yearOfPassing: '',
-        branch: '',
-        selectedSlot: '',
-        referredBy: ''
-    })
+        fullName: "",
+        email: "",
+        phoneNumber: "",
+        collegeName: "",
+        yearOfPassing: "",
+        branch: "",
+        selectedSlot: "",
+        referredBy: "",
+    });
 
-    const [errors, setErrors] = useState<FormErrors>({})
-    const [touched, setTouched] = useState<Record<string, boolean>>({})
-    const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
-    const [availableSlots, setAvailableSlots] = useState<string[]>([])
+    const [errors, setErrors] = useState<FormErrors>({});
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
     // Fetch slots on mount
     useEffect(() => {
         const fetchSlots = async () => {
             const { data, error } = await supabase
-                .from('alloted_timeslotes')
-                .select('slot_name')
-                .order('created_at', { ascending: true }) // Or arbitrary order if date parsing isn't easy
+                .from("alloted_timeslotes")
+                .select("slot_name")
+                .order("created_at", { ascending: true }); // Or arbitrary order if date parsing isn't easy
 
             if (data) {
                 // If the DB has dates, we can map them.
                 // Assuming DB returns objects like { slot_name: '5th January' }
-                setAvailableSlots(data.map((s: any) => s.slot_name))
+                setAvailableSlots(data.map((s: any) => s.slot_name));
             } else if (error) {
-                console.error('Error fetching slots:', error)
+                console.error("Error fetching slots:", error);
                 // Fallback to hardcoded if DB fails or is empty, to keep UI working
-                setAvailableSlots(['5th January', '19th January', '2nd February'])
+                setAvailableSlots(["19th January", "2nd February"]);
             }
-        }
-        fetchSlots()
-    }, [])
+        };
+        fetchSlots();
+    }, []);
 
     const validateEmail = (email: string): boolean => {
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        return re.test(email)
-    }
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    };
 
     const validatePhoneNumber = (phone: string): boolean => {
         // Validates 10-digit phone numbers with optional country code
-        const re = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,5}[-\s.]?[0-9]{1,5}$/
-        return re.test(phone) && phone.replace(/\D/g, '').length >= 10
-    }
+        const re =
+            /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,5}[-\s.]?[0-9]{1,5}$/;
+        return re.test(phone) && phone.replace(/\D/g, "").length >= 10;
+    };
 
     const validateForm = (): boolean => {
-        const newErrors: FormErrors = {}
+        const newErrors: FormErrors = {};
 
         if (!formData.fullName.trim()) {
-            newErrors.fullName = 'Full name is required'
+            newErrors.fullName = "Full name is required";
         } else if (formData.fullName.trim().length < 2) {
-            newErrors.fullName = 'Name must be at least 2 characters'
+            newErrors.fullName = "Name must be at least 2 characters";
         }
 
         if (!formData.email.trim()) {
-            newErrors.email = 'Email is required'
+            newErrors.email = "Email is required";
         } else if (!validateEmail(formData.email)) {
-            newErrors.email = 'Please enter a valid email address'
+            newErrors.email = "Please enter a valid email address";
         }
 
         if (!formData.phoneNumber.trim()) {
-            newErrors.phoneNumber = 'Phone number is required'
+            newErrors.phoneNumber = "Phone number is required";
         } else if (!validatePhoneNumber(formData.phoneNumber)) {
-            newErrors.phoneNumber = 'Please enter a valid phone number (at least 10 digits)'
+            newErrors.phoneNumber =
+                "Please enter a valid phone number (at least 10 digits)";
         }
 
         if (!formData.collegeName.trim()) {
-            newErrors.collegeName = 'College name is required'
+            newErrors.collegeName = "College name is required";
         }
 
         if (!formData.yearOfPassing) {
-            newErrors.yearOfPassing = 'Year of passing is required'
+            newErrors.yearOfPassing = "Year of passing is required";
         }
 
         if (!formData.branch.trim()) {
-            newErrors.branch = 'Branch is required'
+            newErrors.branch = "Branch is required";
         }
 
         if (!formData.selectedSlot) {
-            newErrors.selectedSlot = 'Please select a slot'
+            newErrors.selectedSlot = "Please select a slot";
         }
 
-        setErrors(newErrors)
-        return Object.keys(newErrors).length === 0
-    }
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
-        const { name, value } = e.target
-        setFormData(prev => ({
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    ): void => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
             ...prev,
-            [name]: value
-        }))
+            [name]: value,
+        }));
 
         // Clear error when user starts typing
         if (errors[name]) {
-            setErrors(prev => ({
+            setErrors((prev) => ({
                 ...prev,
-                [name]: ''
-            }))
+                [name]: "",
+            }));
         }
-    }
+    };
 
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>): void => {
-        const { name } = e.target
-        setTouched(prev => ({
+    const handleBlur = (
+        e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>,
+    ): void => {
+        const { name } = e.target;
+        setTouched((prev) => ({
             ...prev,
-            [name]: true
-        }))
-    }
+            [name]: true,
+        }));
+    };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
-        e.preventDefault()
+    const handleSubmit = async (
+        e: React.FormEvent<HTMLFormElement>,
+    ): Promise<void> => {
+        e.preventDefault();
 
         // Mark all fields as touched
         setTouched({
@@ -128,19 +140,19 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
             collegeName: true,
             yearOfPassing: true,
             branch: true,
-            selectedSlot: true
-        })
+            selectedSlot: true,
+        });
 
         if (!validateForm()) {
-            return
+            return;
         }
 
-        setIsSubmitting(true)
+        setIsSubmitting(true);
 
         try {
             // 1. Insert student data into Supabase
             const { data, error } = await supabase
-                .from('students')
+                .from("students")
                 .insert([
                     {
                         full_name: formData.fullName,
@@ -150,36 +162,36 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                         year_of_passing: formData.yearOfPassing,
                         branch: formData.branch,
                         selected_slot: formData.selectedSlot,
-                        referred_by: formData.referredBy || null // Send null if empty string
-                    }
+                        referred_by: formData.referredBy || null, // Send null if empty string
+                    },
                 ])
                 .select()
-                .single()
+                .single();
 
             if (error) {
                 // Handle duplicate email error
-                if (error.code === '23505') {
-                    setErrors({ email: 'This email is already registered' })
-                    setIsSubmitting(false)
-                    return
+                if (error.code === "23505") {
+                    setErrors({ email: "This email is already registered" });
+                    setIsSubmitting(false);
+                    return;
                 }
-                throw error
+                throw error;
             }
 
-            // 2. (Removed) We are no longer adding students to the 'alloted_timeslotes' array via RPC 
+            // 2. (Removed) We are no longer adding students to the 'alloted_timeslotes' array via RPC
             // as per the latest requirements. The 'selected_slot' in the students table is sufficient.
 
             // Pass student data including ID to parent component
-            onSubmit({ ...formData, id: data.id })
+            onSubmit({ ...formData, id: data.id });
         } catch (error) {
-            console.error('Error submitting registration:', error)
+            console.error("Error submitting registration:", error);
             setErrors({
-                submit: 'An error occurred while submitting. Please try again.'
-            })
+                submit: "An error occurred while submitting. Please try again.",
+            });
         } finally {
-            setIsSubmitting(false)
+            setIsSubmitting(false);
         }
-    }
+    };
 
     return (
         <div className="animate-fadeIn">
@@ -192,7 +204,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                         cohort is available for both online and offline
                     </p>
                     <p className="text-gray-600">
-                        Please provide your information to begin the enrollment process
+                        Please provide your information to begin the enrollment
+                        process
                     </p>
                 </div>
 
@@ -209,8 +222,11 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.fullName}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${touched.fullName && errors.fullName ? 'border-red-500' : ''
-                                }`}
+                            className={`input-field ${
+                                touched.fullName && errors.fullName
+                                    ? "border-red-500"
+                                    : ""
+                            }`}
                             placeholder="Enter your full name"
                         />
                         {touched.fullName && errors.fullName && (
@@ -221,7 +237,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                     {/* Email */}
                     <div>
                         <label htmlFor="email" className="label">
-                            Email Address <span className="text-red-500">*</span>
+                            Email Address{" "}
+                            <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="email"
@@ -230,8 +247,11 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.email}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${touched.email && errors.email ? 'border-red-500' : ''
-                                }`}
+                            className={`input-field ${
+                                touched.email && errors.email
+                                    ? "border-red-500"
+                                    : ""
+                            }`}
                             placeholder="your.email@example.com"
                         />
                         {touched.email && errors.email && (
@@ -251,8 +271,11 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.phoneNumber}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${touched.phoneNumber && errors.phoneNumber ? 'border-red-500' : ''
-                                }`}
+                            className={`input-field ${
+                                touched.phoneNumber && errors.phoneNumber
+                                    ? "border-red-500"
+                                    : ""
+                            }`}
                             placeholder="+1 (555) 123-4567"
                         />
                         {touched.phoneNumber && errors.phoneNumber && (
@@ -272,8 +295,11 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.collegeName}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${touched.collegeName && errors.collegeName ? 'border-red-500' : ''
-                                }`}
+                            className={`input-field ${
+                                touched.collegeName && errors.collegeName
+                                    ? "border-red-500"
+                                    : ""
+                            }`}
                             placeholder="Enter your college name"
                         />
                         {touched.collegeName && errors.collegeName && (
@@ -284,7 +310,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                     {/* Year of Passing */}
                     <div>
                         <label htmlFor="yearOfPassing" className="label">
-                            Year of Passing <span className="text-red-500">*</span>
+                            Year of Passing{" "}
+                            <span className="text-red-500">*</span>
                         </label>
                         <select
                             id="yearOfPassing"
@@ -292,13 +319,18 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.yearOfPassing}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${touched.yearOfPassing && errors.yearOfPassing ? 'border-red-500' : ''
-                                }`}
+                            className={`input-field ${
+                                touched.yearOfPassing && errors.yearOfPassing
+                                    ? "border-red-500"
+                                    : ""
+                            }`}
                         >
                             <option value="">Select year</option>
                             <option value="2024">2024</option>
                             <option value="2025">2025</option>
                             <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
                         </select>
                         {touched.yearOfPassing && errors.yearOfPassing && (
                             <p className="error-text">{errors.yearOfPassing}</p>
@@ -308,7 +340,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                     {/* Majors/Specialization */}
                     <div>
                         <label htmlFor="branch" className="label">
-                            Majors/Specialization <span className="text-red-500">*</span>
+                            Majors/Specialization{" "}
+                            <span className="text-red-500">*</span>
                         </label>
                         <select
                             id="branch"
@@ -316,25 +349,55 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.branch}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${touched.branch && errors.branch ? 'border-red-500' : ''
-                                }`}
+                            className={`input-field ${
+                                touched.branch && errors.branch
+                                    ? "border-red-500"
+                                    : ""
+                            }`}
                         >
                             <option value="">Select your major</option>
-                            <option value="Computer Science Engineering (CSE)">Computer Science Engineering (CSE)</option>
-                            <option value="Artificial Intelligence & Machine Learning (AIML)">Artificial Intelligence & Machine Learning (AIML)</option>
+                            <option value="Computer Science Engineering (CSE)">
+                                Computer Science Engineering (CSE)
+                            </option>
+                            <option value="Artificial Intelligence & Machine Learning (AIML)">
+                                Artificial Intelligence & Machine Learning
+                                (AIML)
+                            </option>
                             <option value="Data Science">Data Science</option>
-                            <option value="Information Technology (IT)">Information Technology (IT)</option>
-                            <option value="Electronics and Communication Engineering (ECE)">Electronics and Communication Engineering (ECE)</option>
-                            <option value="Electrical Engineering (EE)">Electrical Engineering (EE)</option>
-                            <option value="Mechanical Engineering">Mechanical Engineering</option>
-                            <option value="Civil Engineering">Civil Engineering</option>
-                            <option value="Chemical Engineering">Chemical Engineering</option>
+                            <option value="Information Technology (IT)">
+                                Information Technology (IT)
+                            </option>
+                            <option value="Electronics and Communication Engineering (ECE)">
+                                Electronics and Communication Engineering (ECE)
+                            </option>
+                            <option value="Electrical Engineering (EE)">
+                                Electrical Engineering (EE)
+                            </option>
+                            <option value="Mechanical Engineering">
+                                Mechanical Engineering
+                            </option>
+                            <option value="Civil Engineering">
+                                Civil Engineering
+                            </option>
+                            <option value="Chemical Engineering">
+                                Chemical Engineering
+                            </option>
                             <option value="Biotechnology">Biotechnology</option>
-                            <option value="Aerospace Engineering">Aerospace Engineering</option>
-                            <option value="Automobile Engineering">Automobile Engineering</option>
-                            <option value="Industrial Engineering">Industrial Engineering</option>
-                            <option value="Robotics Engineering">Robotics Engineering</option>
-                            <option value="Cyber Security">Cyber Security</option>
+                            <option value="Aerospace Engineering">
+                                Aerospace Engineering
+                            </option>
+                            <option value="Automobile Engineering">
+                                Automobile Engineering
+                            </option>
+                            <option value="Industrial Engineering">
+                                Industrial Engineering
+                            </option>
+                            <option value="Robotics Engineering">
+                                Robotics Engineering
+                            </option>
+                            <option value="Cyber Security">
+                                Cyber Security
+                            </option>
                             <option value="Other">Other</option>
                         </select>
                         {touched.branch && errors.branch && (
@@ -345,7 +408,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                     {/* Select Slot to Start Course */}
                     <div>
                         <label htmlFor="selectedSlot" className="label">
-                            Select Slot to Start Course <span className="text-red-500">*</span>
+                            Select Slot to Start Course{" "}
+                            <span className="text-red-500">*</span>
                         </label>
                         <select
                             id="selectedSlot"
@@ -353,8 +417,11 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             value={formData.selectedSlot}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className={`input-field ${touched.selectedSlot && errors.selectedSlot ? 'border-red-500' : ''
-                                }`}
+                            className={`input-field ${
+                                touched.selectedSlot && errors.selectedSlot
+                                    ? "border-red-500"
+                                    : ""
+                            }`}
                         >
                             <option value="">Select your preferred slot</option>
                             {availableSlots.length > 0 ? (
@@ -366,9 +433,12 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             ) : (
                                 // Fallback info if loading or empty
                                 <>
-
-                                    <option value="19th January">19th January</option>
-                                    <option value="2nd February">2nd February</option>
+                                    <option value="19th January">
+                                        19th January
+                                    </option>
+                                    <option value="2nd February">
+                                        2nd February
+                                    </option>
                                 </>
                             )}
                         </select>
@@ -380,7 +450,10 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                     {/* Referred By (Optional) */}
                     <div>
                         <label htmlFor="referredBy" className="label">
-                            Referred By <span className="text-gray-400 font-normal text-sm ml-1">(Optional)</span>
+                            Referred By{" "}
+                            <span className="text-gray-400 font-normal text-sm ml-1">
+                                (Optional)
+                            </span>
                         </label>
                         <input
                             type="text"
@@ -397,7 +470,9 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                     {/* General Error Message */}
                     {errors.submit && (
                         <div className="bg-red-50 border border-red-200 rounded-xl p-4 mt-4">
-                            <p className="text-red-700 text-sm">{errors.submit}</p>
+                            <p className="text-red-700 text-sm">
+                                {errors.submit}
+                            </p>
                         </div>
                     )}
 
@@ -454,7 +529,7 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                 </form>
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default RegistrationStep
+export default RegistrationStep;
