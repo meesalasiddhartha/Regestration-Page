@@ -4,10 +4,12 @@ import ProgressBar from './components/ProgressBar'
 import RegistrationStep from './components/RegistrationStep'
 import AssessmentStep from './components/AssessmentStep'
 import SuccessStep from './components/SuccessStep'
+import CourseSelection from './components/CourseSelection'
 import { StudentData, Answer } from './types'
 
 function App() {
-    const [currentStep, setCurrentStep] = useState<number>(1)
+    const [currentStep, setCurrentStep] = useState<number>(0) // Start at 0 for selection
+    const [programType, setProgramType] = useState<'cohort' | 'ondemand' | 'workshop'>('cohort')
     const [registrationData, setRegistrationData] = useState<StudentData>({
         fullName: '',
         email: '',
@@ -17,9 +19,16 @@ function App() {
         branch: '',
         selectedSlot: '',
         sessionTime: '',
-        mode: ''
+        mode: '',
+        programType: 'cohort' // Initial value
     })
     const [assessmentAnswers, setAssessmentAnswers] = useState<Answer>({})
+
+    const handleCourseSelect = (type: 'cohort' | 'ondemand' | 'workshop') => {
+        setProgramType(type)
+        setRegistrationData(prev => ({ ...prev, programType: type }))
+        setCurrentStep(1)
+    }
 
     const handleRegistrationSubmit = (data: StudentData): void => {
         setRegistrationData(data)
@@ -36,21 +45,24 @@ function App() {
             <div className="container mx-auto px-4 py-8 max-w-4xl">
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
+                    <h1 className="text-4xl md:text-5xl font-bold text-indigo-600 mb-3">
                         OttoLearn
                     </h1>
-                    <p className="text-lg text-gray-600">
-                        AI Native FullStack Developer
-                    </p>
                 </div>
 
-                {/* Progress Bar */}
-                <ProgressBar currentStep={currentStep} />
+                {/* Progress Bar - Only show if currentStep > 0 */}
+                {currentStep > 0 && <ProgressBar currentStep={currentStep} />}
 
                 {/* Step Content */}
                 <div className="mt-12">
+                    {currentStep === 0 && (
+                        <CourseSelection onSelect={handleCourseSelect} />
+                    )}
                     {currentStep === 1 && (
-                        <RegistrationStep onSubmit={handleRegistrationSubmit} />
+                        <RegistrationStep
+                            onSubmit={handleRegistrationSubmit}
+                            programType={programType}
+                        />
                     )}
                     {currentStep === 2 && (
                         <AssessmentStep
@@ -65,7 +77,7 @@ function App() {
 
                 {/* Footer */}
                 <div className="text-center mt-16 text-sm text-gray-500">
-                    <p>© 2025 OttoLearn. All rights reserved.</p>
+                    <p>© 2026 OttoLearn. All rights reserved.</p>
                 </div>
             </div>
         </div>

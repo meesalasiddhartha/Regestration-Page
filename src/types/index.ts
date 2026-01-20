@@ -7,10 +7,12 @@ export interface StudentData {
     collegeName: string
     yearOfPassing: string
     branch: string
-    selectedSlot: string
-    sessionTime: string
-    mode: string
+    selectedSlot?: string // Made optional
+    sessionTime?: string  // Made optional
+    mode?: string         // Made optional
+    specificCourse?: string // Added
     referredBy?: string
+    programType: 'cohort' | 'ondemand' | 'workshop' // Added
 }
 
 export interface RegistrationFormData {
@@ -23,7 +25,9 @@ export interface RegistrationFormData {
     selectedSlot: string
     sessionTime: string
     mode: string
+    specificCourse: string // Added
     referredBy: string
+    programType: 'cohort' | 'ondemand' | 'workshop' // Added
 }
 
 export type FormErrors = Record<string, string>
@@ -33,10 +37,12 @@ export interface Question {
     id: number
     question_number: number
     question_text: string
-    question_type: 'text' | 'mcq'  // Type of question
-    mcq_options?: string[]          // Array of options for MCQ questions
+    question_type: 'text' | 'mcq'
+    mcq_options?: string[]
     is_active: boolean
+    specific_course_context?: string | null
     created_at?: string
+    program_type?: 'cohort' | 'ondemand' | 'workshop' | 'all' // Added
 }
 
 export type Answer = Record<number, string>
@@ -65,6 +71,7 @@ export interface StudentAnswer {
 // Component Props
 export interface RegistrationStepProps {
     onSubmit: (data: StudentData) => void
+    programType: 'cohort' | 'ondemand' | 'workshop'
 }
 
 export interface AssessmentStepProps {
@@ -77,7 +84,7 @@ export interface ProgressBarProps {
 }
 
 export interface SuccessStepProps {
-    studentData: StudentData
+    studentData: StudentData;
 }
 
 // Supabase Response Types

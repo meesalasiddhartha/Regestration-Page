@@ -1,5 +1,9 @@
 // ... (imports remain mostly same, adding useEffect)
 import { useState, useEffect } from "react";
+
+// Feature flags for future course availability
+const ON_DEMAND_AVAILABLE = false; // set to true when on‑demand courses are ready
+const WORKSHOP_AVAILABLE = true; // set to true when workshop courses are ready
 import { supabase } from "../lib/supabase";
 import {
     RegistrationStepProps,
@@ -7,7 +11,7 @@ import {
     FormErrors,
 } from "../types";
 
-const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
+const RegistrationStep = ({ onSubmit, programType }: RegistrationStepProps) => {
     const [formData, setFormData] = useState<RegistrationFormData>({
         fullName: "",
         email: "",
@@ -18,34 +22,42 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
         selectedSlot: "",
         sessionTime: "",
         mode: "",
+        specificCourse: "",
         referredBy: "",
+        programType: programType,
     });
+
+    // Update formData if programType prop changes
+    useEffect(() => {
+        setFormData(prev => ({ ...prev, programType }));
+    }, [programType]);
 
     const [errors, setErrors] = useState<FormErrors>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
-    // Fetch slots on mount
+    // Fetch slots on mount (only relevant for cohort)
     useEffect(() => {
+        if (programType !== 'cohort') return;
+
         const fetchSlots = async () => {
+            if (!supabase) return;
+
             const { data, error } = await supabase
                 .from("alloted_timeslotes")
                 .select("slot_name")
-                .order("created_at", { ascending: true }); // Or arbitrary order if date parsing isn't easy
+                .order("created_at", { ascending: true });
 
             if (data) {
-                // If the DB has dates, we can map them.
-                // Assuming DB returns objects like { slot_name: '5th January' }
                 setAvailableSlots(data.map((s: any) => s.slot_name));
             } else if (error) {
                 console.error("Error fetching slots:", error);
-                // Fallback to hardcoded if DB fails or is empty, to keep UI working
                 setAvailableSlots(["19th January", "2nd February"]);
             }
         };
         fetchSlots();
-    }, []);
+    }, [programType]);
 
     const validateEmail = (email: string): boolean => {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -53,7 +65,6 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
     };
 
     const validatePhoneNumber = (phone: string): boolean => {
-        // Validates 10-digit phone numbers with optional country code
         const re =
             /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,5}[-\s.]?[0-9]{1,5}$/;
         return re.test(phone) && phone.replace(/\D/g, "").length >= 10;
@@ -93,16 +104,31 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
             newErrors.branch = "Branch is required";
         }
 
-        if (!formData.selectedSlot) {
-            newErrors.selectedSlot = "Please select a slot";
-        }
+        // Conditional Validation based on Program Type
+        if (programType === 'cohort') {
+            if (!formData.selectedSlot) {
+                newErrors.selectedSlot = "Please select a slot";
+            }
 
-        if (!formData.sessionTime) {
-            newErrors.sessionTime = "Please select a session time";
-        }
+            if (!formData.sessionTime) {
+                newErrors.sessionTime = "Please select a session time";
+            }
 
-        if (!formData.mode) {
-            newErrors.mode = "Please select a preferred mode";
+            if (!formData.mode) {
+                newErrors.mode = "Please select a preferred mode";
+            }
+
+            if (!formData.specificCourse) {
+                newErrors.specificCourse = "Please select a course";
+            }
+        } else if (programType === 'ondemand' && ON_DEMAND_AVAILABLE) {
+            if (!formData.specificCourse) {
+                newErrors.specificCourse = "Please select a course";
+            }
+        } else if (programType === 'workshop' && WORKSHOP_AVAILABLE) {
+            if (!formData.specificCourse) {
+                newErrors.specificCourse = "Please select a course";
+            }
         }
 
         setErrors(newErrors);
@@ -118,7 +144,6 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
             [name]: value,
         }));
 
-        // Clear error when user starts typing
         if (errors[name]) {
             setErrors((prev) => ({
                 ...prev,
@@ -142,7 +167,6 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
     ): Promise<void> => {
         e.preventDefault();
 
-        // Mark all fields as touched
         setTouched({
             fullName: true,
             email: true,
@@ -150,9 +174,10 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
             collegeName: true,
             yearOfPassing: true,
             branch: true,
-            selectedSlot: true,
-            sessionTime: true,
-            mode: true,
+            specificCourse: true, // This will be conditionally set based on programType in validateForm
+            selectedSlot: programType === 'cohort',
+            sessionTime: programType === 'cohort',
+            mode: programType === 'cohort',
         });
 
         if (!validateForm()) {
@@ -162,7 +187,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
         setIsSubmitting(true);
 
         try {
-            // 1. Insert student data into Supabase
+            if (!supabase) throw new Error("Supabase client not initialized");
+
             const { data, error } = await supabase
                 .from("students")
                 .insert([
@@ -173,17 +199,18 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                         college_name: formData.collegeName,
                         year_of_passing: formData.yearOfPassing,
                         branch: formData.branch,
-                        selected_slot: formData.selectedSlot,
-                        session_time: formData.sessionTime,
-                        mode: formData.mode,
-                        referred_by: formData.referredBy || null, // Send null if empty string
+                        selected_slot: programType === 'cohort' ? formData.selectedSlot : null,
+                        session_time: programType === 'cohort' ? formData.sessionTime : null,
+                        mode: programType === 'cohort' ? formData.mode : null,
+                        specific_course: formData.specificCourse,
+                        referred_by: formData.referredBy || null,
+                        program_type: programType
                     },
                 ])
                 .select()
                 .single();
 
             if (error) {
-                // Handle duplicate email error
                 if (error.code === "23505") {
                     setErrors({ email: "This email is already registered" });
                     setIsSubmitting(false);
@@ -192,18 +219,48 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                 throw error;
             }
 
-            // 2. (Removed) We are no longer adding students to the 'alloted_timeslotes' array via RPC
-            // as per the latest requirements. The 'selected_slot' in the students table is sufficient.
-
-            // Pass student data including ID to parent component
             onSubmit({ ...formData, id: data.id });
         } catch (error) {
             console.error("Error submitting registration:", error);
             setErrors({
-                submit: "An error occurred while submitting. Please try again.",
+                submit: `Error: ${(error as any).message || "Unknown error occurred"}`,
             });
+            console.log("Connected to Supabase URL:", import.meta.env.VITE_SUPABASE_URL); // DEBUG
+            console.log("Full Error Object:", error);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const getProgramTitle = () => {
+        switch (programType) {
+            case 'ondemand': return 'On-Demand Learning Registration';
+            case 'workshop': return 'Workshop Registration';
+            default: return 'Cohort Registration';
+        }
+    };
+
+    const getCourseOptions = () => {
+        switch (programType) {
+            case 'cohort':
+                return [
+                    "Full Stack Web Development",
+                    // "Data Science & AI",
+                    // "Cybersecurity",
+                    // "Cloud Computing & DevOps"
+                ];
+            case 'ondemand':
+                return [
+                    "React Mastery",
+                    "Node.js Advanced"
+                ];
+            case 'workshop':
+                return [
+                    "Ace the HR Interview",
+                    "Crochet"
+                ];
+            default:
+                return [];
         }
     };
 
@@ -212,11 +269,13 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
             <div className="card max-w-2xl mx-auto">
                 <div className="mb-8">
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                        Student Registration
+                        {getProgramTitle()}
                     </h2>
-                    <p className="text-gray-900 font-semibold mb-2">
-                        cohort is available for both online and offline
-                    </p>
+                    {programType === 'cohort' && (
+                        <p className="text-gray-900 font-semibold mb-2">
+                            Cohort is available for both online and offline
+                        </p>
+                    )}
                     <p className="text-gray-600">
                         Please provide your information to begin the enrollment
                         process
@@ -237,8 +296,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             onChange={handleChange}
                             onBlur={handleBlur}
                             className={`input-field ${touched.fullName && errors.fullName
-                                    ? "border-red-500"
-                                    : ""
+                                ? "border-red-500"
+                                : ""
                                 }`}
                             placeholder="Enter your full name"
                         />
@@ -261,8 +320,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             onChange={handleChange}
                             onBlur={handleBlur}
                             className={`input-field ${touched.email && errors.email
-                                    ? "border-red-500"
-                                    : ""
+                                ? "border-red-500"
+                                : ""
                                 }`}
                             placeholder="your.email@example.com"
                         />
@@ -284,8 +343,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             onChange={handleChange}
                             onBlur={handleBlur}
                             className={`input-field ${touched.phoneNumber && errors.phoneNumber
-                                    ? "border-red-500"
-                                    : ""
+                                ? "border-red-500"
+                                : ""
                                 }`}
                             placeholder="+1 (555) 123-4567"
                         />
@@ -307,8 +366,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             onChange={handleChange}
                             onBlur={handleBlur}
                             className={`input-field ${touched.collegeName && errors.collegeName
-                                    ? "border-red-500"
-                                    : ""
+                                ? "border-red-500"
+                                : ""
                                 }`}
                             placeholder="Enter your college name"
                         />
@@ -330,8 +389,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             onChange={handleChange}
                             onBlur={handleBlur}
                             className={`input-field ${touched.yearOfPassing && errors.yearOfPassing
-                                    ? "border-red-500"
-                                    : ""
+                                ? "border-red-500"
+                                : ""
                                 }`}
                         >
                             <option value="">Select year</option>
@@ -359,8 +418,8 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                             onChange={handleChange}
                             onBlur={handleBlur}
                             className={`input-field ${touched.branch && errors.branch
-                                    ? "border-red-500"
-                                    : ""
+                                ? "border-red-500"
+                                : ""
                                 }`}
                         >
                             <option value="">Select your major</option>
@@ -413,100 +472,195 @@ const RegistrationStep = ({ onSubmit }: RegistrationStepProps) => {
                         )}
                     </div>
 
-                    {/* Select Slot to Start Course */}
-                    <div>
-                        <label htmlFor="selectedSlot" className="label">
-                            Select Slot to Start Course{" "}
-                            <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            id="selectedSlot"
-                            name="selectedSlot"
-                            value={formData.selectedSlot}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            className={`input-field ${touched.selectedSlot && errors.selectedSlot
+                    {/* Specific Course Selection */}
+                    {programType === 'cohort' && (
+                        <div>
+                            <label htmlFor="specificCourse" className="label">
+                                Select Course <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                id="specificCourse"
+                                name="specificCourse"
+                                value={formData.specificCourse}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                className={`input-field ${touched.specificCourse && errors.specificCourse
                                     ? "border-red-500"
-                                    : ""
-                                }`}
-                        >
-                            <option value="">Select your preferred slot</option>
-                            {availableSlots.length > 0 ? (
-                                availableSlots.map((slot) => (
-                                    <option key={slot} value={slot}>
-                                        {slot}
+                                    : ""}`}
+                            >
+                                <option value="">Select a course</option>
+                                {getCourseOptions().map((course) => (
+                                    <option key={course} value={course}>
+                                        {course}
                                     </option>
-                                ))
-                            ) : (
-                                // Fallback info if loading or empty
-                                <>
-                                    <option value="19th January">
-                                        19th January
-                                    </option>
-                                    <option value="2nd February">
-                                        2nd February
-                                    </option>
-                                </>
+                                ))}
+                            </select>
+                            {touched.specificCourse && errors.specificCourse && (
+                                <p className="error-text">{errors.specificCourse}</p>
                             )}
-                        </select>
-                        {touched.selectedSlot && errors.selectedSlot && (
-                            <p className="error-text">{errors.selectedSlot}</p>
-                        )}
-                    </div>
+                        </div>
+                    )}
+                    {programType === 'ondemand' && (
+                        ON_DEMAND_AVAILABLE ? (
+                            <div>
+                                <label htmlFor="specificCourse" className="label">
+                                    Select Course <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="specificCourse"
+                                    name="specificCourse"
+                                    value={formData.specificCourse}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    className={`input-field ${touched.specificCourse && errors.specificCourse
+                                        ? "border-red-500"
+                                        : ""}`}
+                                >
+                                    <option value="">Select a course</option>
+                                    {getCourseOptions().map((course) => (
+                                        <option key={course} value={course}>
+                                            {course}
+                                        </option>
+                                    ))}
+                                </select>
+                                {touched.specificCourse && errors.specificCourse && (
+                                    <p className="error-text">{errors.specificCourse}</p>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-gray-600">On‑Demand courses are coming soon.</p>
+                        )
+                    )}
+                    {programType === 'workshop' && (
+                        WORKSHOP_AVAILABLE ? (
+                            <div>
+                                <label htmlFor="specificCourse" className="label">
+                                    Select Course <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="specificCourse"
+                                    name="specificCourse"
+                                    value={formData.specificCourse}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    className={`input-field ${touched.specificCourse && errors.specificCourse
+                                        ? "border-red-500"
+                                        : ""}`}
+                                >
+                                    <option value="">Select a course</option>
+                                    {getCourseOptions().map((course) => (
+                                        <option key={course} value={course}>
+                                            {course}
+                                        </option>
+                                    ))}
+                                </select>
+                                {touched.specificCourse && errors.specificCourse && (
+                                    <p className="error-text">{errors.specificCourse}</p>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-gray-600">Workshop courses are coming soon.</p>
+                        )
+                    )}
 
-                    {/* Session Time */}
-                    <div>
-                        <label htmlFor="sessionTime" className="label">
-                            Preferred Session Time <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            id="sessionTime"
-                            name="sessionTime"
-                            value={formData.sessionTime}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            className={`input-field ${touched.sessionTime && errors.sessionTime
-                                    ? "border-red-500"
-                                    : ""
-                                }`}
-                        >
-                            <option value="">Select session time</option>
-                            <option value="Morning Session (10am-11.30am)">
-                                Morning Session (10am-11.30am)
-                            </option>
-                            <option value="Evening Session (5pm-6.30pm)">
-                                Evening Session (5pm-6.30pm)
-                            </option>
-                        </select>
-                        {touched.sessionTime && errors.sessionTime && (
-                            <p className="error-text">{errors.sessionTime}</p>
-                        )}
-                    </div>
+                    {/* Cohort Specific Fields */}
+                    {programType === 'cohort' && (
+                        <>
+                            {/* Select Slot to Start Course */}
+                            <div>
+                                <label htmlFor="selectedSlot" className="label">
+                                    Select Slot to Start Course{" "}
+                                    <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="selectedSlot"
+                                    name="selectedSlot"
+                                    value={formData.selectedSlot}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    className={`input-field ${touched.selectedSlot && errors.selectedSlot
+                                        ? "border-red-500"
+                                        : ""
+                                        }`}
+                                >
+                                    <option value="">Select your preferred slot</option>
+                                    {availableSlots.length > 0 ? (
+                                        availableSlots.map((slot) => (
+                                            <option key={slot} value={slot}>
+                                                {slot}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <>
+                                            <option value="19th January">
+                                                19th January
+                                            </option>
+                                            <option value="2nd February">
+                                                2nd February
+                                            </option>
+                                        </>
+                                    )}
+                                </select>
+                                {touched.selectedSlot && errors.selectedSlot && (
+                                    <p className="error-text">{errors.selectedSlot}</p>
+                                )}
+                            </div>
 
-                    {/* Mode */}
-                    <div>
-                        <label htmlFor="mode" className="label">
-                            Preferred Mode <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            id="mode"
-                            name="mode"
-                            value={formData.mode}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            className={`input-field ${touched.mode && errors.mode
-                                    ? "border-red-500"
-                                    : ""
-                                }`}
-                        >
-                            <option value="">Select mode</option>
-                            <option value="Online">Online</option>
-                            <option value="Offline">Offline</option>
-                        </select>
-                        {touched.mode && errors.mode && (
-                            <p className="error-text">{errors.mode}</p>
-                        )}
-                    </div>
+                            {/* Session Time */}
+                            <div>
+                                <label htmlFor="sessionTime" className="label">
+                                    Preferred Session Time <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="sessionTime"
+                                    name="sessionTime"
+                                    value={formData.sessionTime}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    className={`input-field ${touched.sessionTime && errors.sessionTime
+                                        ? "border-red-500"
+                                        : ""
+                                        }`}
+                                >
+                                    <option value="">Select session time</option>
+                                    <option value="Morning Session (10am-11.30am)">
+                                        Morning Session (10am-11.30am)
+                                    </option>
+                                    <option value="Evening Session (5pm-6.30pm)">
+                                        Evening Session (5pm-6.30pm)
+                                    </option>
+                                </select>
+                                {touched.sessionTime && errors.sessionTime && (
+                                    <p className="error-text">{errors.sessionTime}</p>
+                                )}
+                            </div>
+
+                            {/* Mode */}
+                            <div>
+                                <label htmlFor="mode" className="label">
+                                    Preferred Mode <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="mode"
+                                    name="mode"
+                                    value={formData.mode}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    className={`input-field ${touched.mode && errors.mode
+                                        ? "border-red-500"
+                                        : ""
+                                        }`}
+                                >
+                                    <option value="">Select mode</option>
+                                    <option value="Online">Online</option>
+                                    <option value="Offline">Offline</option>
+                                </select>
+                                {touched.mode && errors.mode && (
+                                    <p className="error-text">{errors.mode}</p>
+                                )}
+                            </div>
+                        </>
+                    )}
 
                     {/* Referred By (Optional) */}
                     <div>

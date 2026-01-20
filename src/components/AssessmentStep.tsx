@@ -25,23 +25,48 @@ const AssessmentStep = ({ onSubmit, studentData }: AssessmentStepProps) => {
                     throw new Error('Supabase client not initialized')
                 }
 
+                // Filter by program_type: 'all' or specific type
+                // If programType is undefined (legacy), default to 'all' or 'cohort' if you prefer. 
+                // Using 'cohort' as fallback or just 'all'. 
+                // Since we added programType to StudentData, it should be present.
+                const programType = studentData.programType || 'cohort';
+                const specificCourse = studentData.specificCourse || null;
+
                 const { data, error } = await supabase
                     .from('questions')
                     .select('*')
                     .eq('is_active', true)
+                    .in('program_type', ['all', programType])
                     .order('question_number', { ascending: true })
 
                 if (error) throw error
 
-                if (!data || data.length === 0) {
-                    setErrors({ fetch: 'No questions found. Please add questions to the database.' })
-                    setIsLoading(false)
-                    return
+                // Filter logic:
+                // 1. Keep 'all' program types
+                // 2. Keep matching program types IF:
+                //    a. specific_course_context is NULL (generic for that program)
+                //    b. specific_course_context matches the student's selected course
+                const filteredData = (data || []).filter(q => {
+                    if (q.program_type === 'all') return true;
+                    if (!q.specific_course_context) return true; // Generic for program
+                    return q.specific_course_context === specificCourse; // Specific to course
+                });
+
+                if (!filteredData || filteredData.length === 0) {
+                    console.log('No questions found for this specific course content.');
+                    setQuestions([]);
+                    // Do not auto-submit. Let the UI handle the "No questions" state if deemed appropriate,
+                    // or just show an empty state.
+                    // For now, let's allow them to submit "empty" to finish, but manually.
+                    // Or better, show a message.
+                    setErrors({ fetch: "No assessment questions found for this program. Please contact support or continue." });
+                    setIsLoading(false);
+                    return;
                 }
 
                 // Interleave questions: 3 MCQ followed by 2 Text
-                const mcqs = data.filter(q => q.question_type === 'mcq')
-                const texts = data.filter(q => q.question_type === 'text')
+                const mcqs = filteredData.filter(q => q.question_type === 'mcq')
+                const texts = filteredData.filter(q => q.question_type === 'text')
 
                 const interleaved: Question[] = []
                 let mcqIdx = 0
