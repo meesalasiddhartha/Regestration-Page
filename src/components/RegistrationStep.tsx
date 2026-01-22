@@ -11,7 +11,7 @@ import {
     FormErrors,
 } from "../types";
 
-const RegistrationStep = ({ onSubmit, programType }: RegistrationStepProps) => {
+const RegistrationStep = ({ onSubmit, programType, selectedCourse, onBack }: RegistrationStepProps) => {
     const [formData, setFormData] = useState<RegistrationFormData>({
         fullName: "",
         email: "",
@@ -22,15 +22,19 @@ const RegistrationStep = ({ onSubmit, programType }: RegistrationStepProps) => {
         selectedSlot: "",
         sessionTime: "",
         mode: "",
-        specificCourse: "",
+        specificCourse: selectedCourse || "",
         referredBy: "",
         programType: programType,
     });
 
-    // Update formData if programType prop changes
+    // Update formData if programType or selectedCourse prop changes
     useEffect(() => {
-        setFormData(prev => ({ ...prev, programType }));
-    }, [programType]);
+        setFormData(prev => ({
+            ...prev,
+            programType,
+            specificCourse: selectedCourse || prev.specificCourse
+        }));
+    }, [programType, selectedCourse]);
 
     const [errors, setErrors] = useState<FormErrors>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -240,34 +244,26 @@ const RegistrationStep = ({ onSubmit, programType }: RegistrationStepProps) => {
         }
     };
 
-    const getCourseOptions = () => {
-        switch (programType) {
-            case 'cohort':
-                return [
-                    "Full Stack Web Development",
-                    // "Data Science & AI",
-                    // "Cybersecurity",
-                    // "Cloud Computing & DevOps"
-                ];
-            case 'ondemand':
-                return [
-                    "React Mastery",
-                    "Node.js Advanced"
-                ];
-            case 'workshop':
-                return [
-                    "Ace the HR Interview",
-                    "Crochet"
-                ];
-            default:
-                return [];
-        }
-    };
+
 
     return (
         <div className="animate-fadeIn">
             <div className="card max-w-2xl mx-auto">
                 <div className="mb-8">
+                    {onBack && (
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                onBack();
+                            }}
+                            className="text-gray-500 hover:text-indigo-600 flex items-center gap-1 text-sm font-medium mb-4 transition-colors"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                            Change Course
+                        </button>
+                    )}
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">
                         {getProgramTitle()}
                     </h2>
@@ -283,6 +279,15 @@ const RegistrationStep = ({ onSubmit, programType }: RegistrationStepProps) => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Selected Course Display */}
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
+                        <label className="block text-sm font-medium text-indigo-900 mb-1">
+                            Selected Course
+                        </label>
+                        <div className="text-lg font-bold text-indigo-700">
+                            {formData.specificCourse || "No course selected"}
+                        </div>
+                    </div>
                     {/* Full Name */}
                     <div>
                         <label htmlFor="fullName" className="label">
@@ -472,96 +477,7 @@ const RegistrationStep = ({ onSubmit, programType }: RegistrationStepProps) => {
                         )}
                     </div>
 
-                    {/* Specific Course Selection */}
-                    {programType === 'cohort' && (
-                        <div>
-                            <label htmlFor="specificCourse" className="label">
-                                Select Course <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                id="specificCourse"
-                                name="specificCourse"
-                                value={formData.specificCourse}
-                                onChange={handleChange}
-                                onBlur={handleBlur}
-                                className={`input-field ${touched.specificCourse && errors.specificCourse
-                                    ? "border-red-500"
-                                    : ""}`}
-                            >
-                                <option value="">Select a course</option>
-                                {getCourseOptions().map((course) => (
-                                    <option key={course} value={course}>
-                                        {course}
-                                    </option>
-                                ))}
-                            </select>
-                            {touched.specificCourse && errors.specificCourse && (
-                                <p className="error-text">{errors.specificCourse}</p>
-                            )}
-                        </div>
-                    )}
-                    {programType === 'ondemand' && (
-                        ON_DEMAND_AVAILABLE ? (
-                            <div>
-                                <label htmlFor="specificCourse" className="label">
-                                    Select Course <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    id="specificCourse"
-                                    name="specificCourse"
-                                    value={formData.specificCourse}
-                                    onChange={handleChange}
-                                    onBlur={handleBlur}
-                                    className={`input-field ${touched.specificCourse && errors.specificCourse
-                                        ? "border-red-500"
-                                        : ""}`}
-                                >
-                                    <option value="">Select a course</option>
-                                    {getCourseOptions().map((course) => (
-                                        <option key={course} value={course}>
-                                            {course}
-                                        </option>
-                                    ))}
-                                </select>
-                                {touched.specificCourse && errors.specificCourse && (
-                                    <p className="error-text">{errors.specificCourse}</p>
-                                )}
-                            </div>
-                        ) : (
-                            <p className="text-gray-600">On‑Demand courses are coming soon.</p>
-                        )
-                    )}
-                    {programType === 'workshop' && (
-                        WORKSHOP_AVAILABLE ? (
-                            <div>
-                                <label htmlFor="specificCourse" className="label">
-                                    Select Course <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    id="specificCourse"
-                                    name="specificCourse"
-                                    value={formData.specificCourse}
-                                    onChange={handleChange}
-                                    onBlur={handleBlur}
-                                    className={`input-field ${touched.specificCourse && errors.specificCourse
-                                        ? "border-red-500"
-                                        : ""}`}
-                                >
-                                    <option value="">Select a course</option>
-                                    {getCourseOptions().map((course) => (
-                                        <option key={course} value={course}>
-                                            {course}
-                                        </option>
-                                    ))}
-                                </select>
-                                {touched.specificCourse && errors.specificCourse && (
-                                    <p className="error-text">{errors.specificCourse}</p>
-                                )}
-                            </div>
-                        ) : (
-                            <p className="text-gray-600">Workshop courses are coming soon.</p>
-                        )
-                    )}
+
 
                     {/* Cohort Specific Fields */}
                     {programType === 'cohort' && (

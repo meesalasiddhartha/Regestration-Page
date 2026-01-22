@@ -7,9 +7,10 @@ interface Step {
 
 const ProgressBar = ({ currentStep }: ProgressBarProps) => {
     const steps: Step[] = [
-        { number: 1, label: 'Registration' },
-        { number: 2, label: 'Assessment' },
-        { number: 3, label: 'Completed' }
+        { number: 1, label: 'Course' },
+        { number: 2, label: 'Registration' },
+        { number: 3, label: 'Assessment' },
+        { number: 4, label: 'Completed' }
     ]
 
     return (
@@ -73,7 +74,7 @@ const ProgressBar = ({ currentStep }: ProgressBarProps) => {
             <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                 <div
                     className="h-full bg-gradient-to-r from-primary-600 to-primary-700 rounded-full transition-all duration-700 ease-out"
-                    style={{ width: `${((currentStep - 1) / 2) * 100}%` }}
+                    style={{ width: `${Math.min(((currentStep - 1) / 3) * 100, 100)}%` }}
                 />
             </div>
         </div>

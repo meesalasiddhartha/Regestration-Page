@@ -1,14 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './index.css'
 import ProgressBar from './components/ProgressBar'
 import RegistrationStep from './components/RegistrationStep'
 import AssessmentStep from './components/AssessmentStep'
 import SuccessStep from './components/SuccessStep'
 import CourseSelection from './components/CourseSelection'
+import SpecificCourseSelection from './components/SpecificCourseSelection'
 import { StudentData, Answer } from './types'
 
 function App() {
     const [currentStep, setCurrentStep] = useState<number>(0) // Start at 0 for selection
+
+    // Scroll to top whenever step changes
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [currentStep])
     const [programType, setProgramType] = useState<'cohort' | 'ondemand' | 'workshop'>('cohort')
     const [registrationData, setRegistrationData] = useState<StudentData>({
         fullName: '',
@@ -20,24 +26,34 @@ function App() {
         selectedSlot: '',
         sessionTime: '',
         mode: '',
-        programType: 'cohort' // Initial value
+        programType: 'cohort',
+        specificCourse: ''
     })
     const [assessmentAnswers, setAssessmentAnswers] = useState<Answer>({})
 
     const handleCourseSelect = (type: 'cohort' | 'ondemand' | 'workshop') => {
         setProgramType(type)
         setRegistrationData(prev => ({ ...prev, programType: type }))
-        setCurrentStep(1)
+        setCurrentStep(1) // Move to Specific Course Selection
+    }
+
+    const handleSpecificCourseSelect = (course: string) => {
+        setRegistrationData(prev => ({ ...prev, specificCourse: course }))
+        setCurrentStep(2) // Move to Registration
     }
 
     const handleRegistrationSubmit = (data: StudentData): void => {
         setRegistrationData(data)
-        setCurrentStep(2)
+        setCurrentStep(3) // Move to Assessment
     }
 
     const handleAssessmentSubmit = (answers: Answer): void => {
         setAssessmentAnswers(answers)
-        setCurrentStep(3)
+        setCurrentStep(4) // Move to Success
+    }
+
+    const goBack = (step: number) => {
+        setCurrentStep(step)
     }
 
     return (
@@ -59,18 +75,27 @@ function App() {
                         <CourseSelection onSelect={handleCourseSelect} />
                     )}
                     {currentStep === 1 && (
-                        <RegistrationStep
-                            onSubmit={handleRegistrationSubmit}
+                        <SpecificCourseSelection
                             programType={programType}
+                            onSelect={handleSpecificCourseSelect}
+                            onBack={() => goBack(0)}
                         />
                     )}
                     {currentStep === 2 && (
+                        <RegistrationStep
+                            onSubmit={handleRegistrationSubmit}
+                            programType={programType}
+                            selectedCourse={registrationData.specificCourse}
+                            onBack={() => goBack(1)}
+                        />
+                    )}
+                    {currentStep === 3 && (
                         <AssessmentStep
                             onSubmit={handleAssessmentSubmit}
                             studentData={registrationData}
                         />
                     )}
-                    {currentStep === 3 && (
+                    {currentStep === 4 && (
                         <SuccessStep studentData={registrationData} />
                     )}
                 </div>

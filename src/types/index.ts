@@ -72,6 +72,8 @@ export interface StudentAnswer {
 export interface RegistrationStepProps {
     onSubmit: (data: StudentData) => void
     programType: 'cohort' | 'ondemand' | 'workshop'
+    selectedCourse?: string
+    onBack?: () => void
 }
 
 export interface AssessmentStepProps {
