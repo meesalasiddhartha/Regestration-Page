@@ -15,7 +15,7 @@ const SpecificCourseSelection = ({ programType, onSelect, onBack }: SpecificCour
                 return [
                     {
                         id: 'Full Stack Web Development',
-                        title: 'Full Stack Web Development',
+                        title: 'AI Native Full Stack Developer',
                         description: 'Master frontend and backend technologies with live mentorship.',
                         details: 'online/offline'
                     }
@@ -86,8 +86,8 @@ const SpecificCourseSelection = ({ programType, onSelect, onBack }: SpecificCour
                         <div
                             key={course.id}
                             className={`p-5 rounded-xl border-2 cursor-pointer transition-all hover:border-indigo-400 ${selectedCourse === course.id
-                                    ? 'border-indigo-600 bg-indigo-50 shadow-sm'
-                                    : 'border-gray-200 bg-white'
+                                ? 'border-indigo-600 bg-indigo-50 shadow-sm'
+                                : 'border-gray-200 bg-white'
                                 }`}
                             onClick={() => setSelectedCourse(course.id)}
                         >
@@ -122,8 +122,8 @@ const SpecificCourseSelection = ({ programType, onSelect, onBack }: SpecificCour
                         onClick={() => onSelect(selectedCourse)}
                         disabled={!selectedCourse}
                         className={`w-full py-3 px-6 rounded-xl font-bold text-lg transition-all transform ${selectedCourse
-                                ? 'bg-gradient-to-r from-orange-300 to-orange-400 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5'
-                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            ? 'bg-gradient-to-r from-orange-300 to-orange-400 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5'
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                             }`}
                     >
                         Continue to Registration
