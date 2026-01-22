@@ -61,7 +61,7 @@ function App() {
             <div className="container mx-auto px-4 py-8 max-w-4xl">
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl md:text-5xl font-bold text-indigo-600 mb-3">
+                    <h1 className="text-4xl md:text-5xl font-bold text-black mb-3">
                         OttoLearn
                     </h1>
                 </div>
