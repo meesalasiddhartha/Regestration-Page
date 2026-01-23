@@ -1,81 +1,54 @@
 import { ProgressBarProps } from '../types'
 
-interface Step {
-    number: number
-    label: string
-}
-
 const ProgressBar = ({ currentStep }: ProgressBarProps) => {
-    const steps: Step[] = [
-        { number: 1, label: 'Course' },
-        { number: 2, label: 'Registration' },
-        { number: 3, label: 'Assessment' },
-        { number: 4, label: 'Completed' }
+    const steps = [
+        { label: 'Course Selection' },
+        { label: 'Registration Details' },
+        { label: 'Skill Assessment' },
+        { label: 'Completion' }
     ]
 
-    return (
-        <div className="w-full">
-            {/* Progress Steps */}
-            <div className="flex items-center justify-between mb-4">
-                {steps.map((step, index) => (
-                    <div key={step.number} className="flex items-center flex-1">
-                        {/* Step Circle */}
-                        <div className="flex flex-col items-center flex-1">
-                            <div
-                                className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-500 ${currentStep >= step.number
-                                    ? 'bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-lg scale-110'
-                                    : 'bg-gray-200 text-gray-500'
-                                    }`}
-                            >
-                                {currentStep > step.number ? (
-                                    <svg
-                                        className="w-6 h-6"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={3}
-                                            d="M5 13l4 4L19 7"
-                                        />
-                                    </svg>
-                                ) : (
-                                    step.number
-                                )}
-                            </div>
-                            <span
-                                className={`mt-2 text-sm font-semibold transition-colors duration-300 ${currentStep >= step.number
-                                    ? 'text-primary-700'
-                                    : 'text-gray-400'
-                                    }`}
-                            >
-                                {step.label}
-                            </span>
-                        </div>
+    const totalSteps = steps.length
+    // Ensure currentStep is within bounds for display
+    const activeStepIndex = Math.min(Math.max(currentStep - 1, 0), totalSteps - 1)
 
-                        {/* Connector Line */}
-                        {index < steps.length - 1 && (
-                            <div className="flex-1 h-1 mx-2 mb-8">
-                                <div
-                                    className={`h-full rounded-full transition-all duration-500 ${currentStep > step.number
-                                        ? 'bg-gradient-to-r from-primary-600 to-primary-700'
-                                        : 'bg-gray-200'
-                                        }`}
-                                />
-                            </div>
-                        )}
-                    </div>
-                ))}
+    return (
+        <div className="w-full max-w-2xl mx-auto mb-10 animate-fadeIn">
+            {/* Header: Label and Step Count */}
+            <div className="flex justify-between items-end mb-3 px-1">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900 leading-none">
+                        {steps[activeStepIndex].label}
+                    </h3>
+                </div>
+                <div className="text-xs font-semibold text-gray-500 tracking-wide">
+                    STEP {currentStep} / {totalSteps}
+                </div>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                <div
-                    className="h-full bg-gradient-to-r from-primary-600 to-primary-700 rounded-full transition-all duration-700 ease-out"
-                    style={{ width: `${Math.min(((currentStep - 1) / 3) * 100, 100)}%` }}
-                />
+            {/* Segmented Bar */}
+            <div className="flex gap-2.5 h-2.5">
+                {steps.map((_, index) => {
+                    const stepNum = index + 1
+                    const isCompleted = currentStep > stepNum
+                    const isCurrent = currentStep === stepNum
+
+                    return (
+                        <div
+                            key={index}
+                            className="flex-1 h-full bg-gray-100 rounded-full overflow-hidden relative"
+                        >
+                            <div
+                                className={`absolute top-0 left-0 h-full w-full rounded-full transition-all duration-700 ease-out transform origin-left ${isCompleted || isCurrent ? 'bg-primary-600 scale-x-100' : 'bg-transparent scale-x-0'
+                                    }`}
+                            >
+                                {isCurrent && (
+                                    <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                                )}
+                            </div>
+                        </div>
+                    )
+                })}
             </div>
         </div>
     )
