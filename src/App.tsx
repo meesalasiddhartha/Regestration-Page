@@ -9,13 +9,13 @@ import SpecificCourseSelection from './components/SpecificCourseSelection'
 import { StudentData, Answer } from './types'
 
 function App() {
-    const [currentStep, setCurrentStep] = useState<number>(0) // Start at 0 for selection
+    const [currentStep, setCurrentStep] = useState<number>(1) // WORKSHOP_ONLY_MODE: Set to 1 (instead of 0) to skip program selection
 
     // Scroll to top whenever step changes
     useEffect(() => {
         window.scrollTo(0, 0)
     }, [currentStep])
-    const [programType, setProgramType] = useState<'cohort' | 'ondemand' | 'workshop'>('cohort')
+    const [programType, setProgramType] = useState<'cohort' | 'ondemand' | 'workshop'>('workshop') // WORKSHOP_ONLY_MODE: Default to 'workshop'
     const [registrationData, setRegistrationData] = useState<StudentData>({
         fullName: '',
         email: '',
@@ -71,9 +71,11 @@ function App() {
 
                 {/* Step Content */}
                 <div className="mt-12">
+                    {/* WORKSHOP_ONLY_MODE: Step 0 is hidden
                     {currentStep === 0 && (
                         <CourseSelection onSelect={handleCourseSelect} />
                     )}
+                    */}
                     {currentStep === 1 && (
                         <SpecificCourseSelection
                             programType={programType}

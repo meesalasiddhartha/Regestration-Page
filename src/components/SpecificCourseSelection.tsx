@@ -47,7 +47,8 @@ const SpecificCourseSelection = ({ programType, onSelect, onBack }: SpecificCour
                         id: 'Crochet',
                         title: 'Crochet',
                         description: 'Learn the art of crochet in this hands-on workshop.',
-                        details: 'Hands-on'
+                        details: 'Coming Soon',
+                        disabled: true
                     }
                 ]
             default:
@@ -61,6 +62,7 @@ const SpecificCourseSelection = ({ programType, onSelect, onBack }: SpecificCour
         <div className="animate-fadeIn">
             <div className="card max-w-2xl mx-auto">
                 <div className="mb-6">
+                    {/* WORKSHOP_ONLY_MODE: Back button hidden
                     <button
                         onClick={onBack}
                         className="text-gray-500 hover:text-indigo-600 flex items-center gap-1 text-sm font-medium mb-4 transition-colors"
@@ -70,6 +72,7 @@ const SpecificCourseSelection = ({ programType, onSelect, onBack }: SpecificCour
                         </svg>
                         Back to Programs
                     </button>
+                    */}
 
                     <div className="text-center">
                         <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -82,33 +85,45 @@ const SpecificCourseSelection = ({ programType, onSelect, onBack }: SpecificCour
                 </div>
 
                 <div className="space-y-4">
-                    {courses.map((course) => (
-                        <div
-                            key={course.id}
-                            className={`p-5 rounded-xl border-2 cursor-pointer transition-all hover:border-indigo-400 ${selectedCourse === course.id
-                                ? 'border-indigo-600 bg-indigo-50 shadow-sm'
-                                : 'border-gray-200 bg-white'
-                                }`}
-                            onClick={() => setSelectedCourse(course.id)}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <h3 className={`text-lg font-bold ${selectedCourse === course.id ? 'text-indigo-900' : 'text-gray-900'}`}>
-                                        {course.title}
-                                    </h3>
-                                    <p className={`text-sm mt-1 ${selectedCourse === course.id ? 'text-indigo-700' : 'text-gray-500'}`}>
-                                        {course.description}
-                                    </p>
-                                </div>
-                                <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 ml-4 flex items-center justify-center ${selectedCourse === course.id ? 'border-indigo-600' : 'border-gray-300'
-                                    }`}>
-                                    {selectedCourse === course.id && (
-                                        <div className="w-3 h-3 rounded-full bg-indigo-600" />
-                                    )}
+                    {courses.map((course: any) => {
+                        const isDisabled = course.disabled;
+                        return (
+                            <div
+                                key={course.id}
+                                className={`p-5 rounded-xl border-2 transition-all ${isDisabled
+                                        ? 'bg-gray-50 border-gray-200 opacity-70 cursor-not-allowed'
+                                        : `cursor-pointer hover:border-indigo-400 ${selectedCourse === course.id
+                                            ? 'border-indigo-600 bg-indigo-50 shadow-sm'
+                                            : 'border-gray-200 bg-white'}`
+                                    }`}
+                                onClick={() => !isDisabled && setSelectedCourse(course.id)}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className={`text-lg font-bold ${isDisabled ? 'text-gray-500' : (selectedCourse === course.id ? 'text-indigo-900' : 'text-gray-900')}`}>
+                                                {course.title}
+                                            </h3>
+                                            {isDisabled && (
+                                                <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium">
+                                                    Coming Soon
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className={`text-sm mt-1 ${isDisabled ? 'text-gray-400' : (selectedCourse === course.id ? 'text-indigo-700' : 'text-gray-500')}`}>
+                                            {course.description}
+                                        </p>
+                                    </div>
+                                    <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 ml-4 flex items-center justify-center ${isDisabled ? 'border-gray-200' : (selectedCourse === course.id ? 'border-indigo-600' : 'border-gray-300')
+                                        }`}>
+                                        {selectedCourse === course.id && !isDisabled && (
+                                            <div className="w-3 h-3 rounded-full bg-indigo-600" />
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        )
+                    })}
 
                     {courses.length === 0 && (
                         <div className="text-center py-8 text-gray-500">

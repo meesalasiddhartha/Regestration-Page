@@ -2,7 +2,8 @@ import { ProgressBarProps } from '../types'
 
 const ProgressBar = ({ currentStep }: ProgressBarProps) => {
     const steps = [
-        { label: 'Course Selection' },
+        // { label: 'Course Selection' }, // WORKSHOP_ONLY_MODE: Removed generic selection step
+        { label: 'Workshop Selection' },
         { label: 'Registration Details' },
         { label: 'Skill Assessment' },
         { label: 'Completion' }
